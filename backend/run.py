@@ -1,3 +1,22 @@
+#!/usr/bin/env python3
+"""
+Legacy run.py - Now Playwright is integrated into main.py
+Use start_server.py instead for the new integrated approach.
+
+This file is kept for reference of the original Playwright setup.
+"""
+
+print("=" * 60)
+print("NOTICE: This run.py is now deprecated!")
+print("Playwright is now integrated into the FastAPI server.")
+print("Use the following command to start the server:")
+print("  python start_server.py")
+print("Or use uvicorn directly:")
+print("  uvicorn main:app --host 127.0.0.1 --port 8000 --reload")
+print("=" * 60)
+
+# Original code kept for reference
+"""
 from playwright.sync_api import sync_playwright
 from pathlib import Path
 
@@ -29,3 +48,4 @@ with sync_playwright() as p:
     print("Navigate around; content script should establish WebSocket connection and send page data.")
     page.wait_for_timeout(50000)  # keep browser open briefly for the test
     context.close()
+"""
