@@ -8,23 +8,11 @@
     "default_popup": "popup.html"
   },
   "host_permissions": ["http://127.0.0.1:8000/*", "ws://127.0.0.1:8000/*"],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "lib/react.production.min.js",
-        "lib/react-dom.production.min.js"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": [
-        "lib/react.production.min.js",
-        "lib/react-dom.production.min.js",
         "ExtensionWebSocket.js",
-        "ui.js",
         "content.js"
       ],
       "run_at": "document_idle"

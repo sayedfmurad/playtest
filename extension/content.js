@@ -12,9 +12,6 @@ if (!window.extensionWS) {
     }
   }, 30000);
 
-  // Notify listeners (e.g., UI) that WS is ready
-  window.dispatchEvent(new CustomEvent('extensionWS-ready'));
-
   window.addEventListener('beforeunload', () => {
     try { clearInterval(window._extensionWSKeepAlive); } catch {}
     try { window.extensionWS?.close(); } catch {}
