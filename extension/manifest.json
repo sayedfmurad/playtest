@@ -3,11 +3,30 @@
   "name": "Quick WebSocket to Local API",
   "version": "0.0.2",
   "description": "Connects to a local Python API via WebSocket for real-time communication.",
+  "action": {
+    "default_title": "Quick WebSocket to Local API",
+    "default_popup": "popup.html"
+  },
   "host_permissions": ["http://127.0.0.1:8000/*", "ws://127.0.0.1:8000/*"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "lib/react.production.min.js",
+        "lib/react-dom.production.min.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["ExtensionWebSocket.js", "content.js"],
+      "js": [
+        "lib/react.production.min.js",
+        "lib/react-dom.production.min.js",
+        "ExtensionWebSocket.js",
+        "ui.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ]

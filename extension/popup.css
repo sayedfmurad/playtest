@@ -1,0 +1,13 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { width: 340px; min-height: 160px; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0b1020; color: #e6e9f5; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #1a2540; }
+.title { font-weight: 600; letter-spacing: .3px; }
+.badge { background: #12203a; color: #8fb3ff; border: 1px solid #1e2c4d; padding: 2px 6px; border-radius: 999px; font-size: 11px; }
+.body { padding: 12px; display: grid; gap: 10px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.btn { background: #3b82f6; color: white; border: 0; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.btn:hover { background: #2f6bdc; }
+.input { width: 100%; background: #0f1830; border: 1px solid #1e2c4d; color: #e6e9f5; border-radius: 8px; padding: 8px 10px; }
+.small { color: #aab2cc; font-size: 12px; }
