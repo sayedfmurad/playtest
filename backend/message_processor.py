@@ -13,29 +13,19 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
         message = json.loads(data)
         logger.info("Processing incoming message")
 
-        # Send acknowledgment
-        response1 = {
-            "type": "acknowledgment",
-            "message": "Message received"
-        }
-        await manager.send_personal_message(json.dumps(response1), websocket)
 
         # Send processing status
-        response2 = {
+        response1 = {
             "type": "processing",
             "message": "Processing your request with Playwright..."
         }
-        await manager.send_personal_message(json.dumps(response2), websocket)
+        await manager.send_personal_message(json.dumps(response1), websocket)
 
         # Use Playwright to interact with the page
         playwright_data = {}
         current_page = get_current_page()
         if current_page:
             try:
-                # Get current page information using Playwright
-                page_title = await current_page.title()
-                page_url = current_page.url
-
                 # You can add more Playwright operations here based on the message content
                 # For example, if the message contains a URL to navigate to:
                 if message.get("action") == "navigate" and message.get("url"):
@@ -54,8 +44,6 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
                     playwright_data["screenshot_size"] = len(screenshot)
 
                 playwright_data.update({
-                    "title": page_title,
-                    "url": page_url,
                     "ready": True
                 })
 

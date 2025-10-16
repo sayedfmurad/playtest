@@ -15,13 +15,6 @@ class ExtensionWebSocket {
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         
-        // Send initial ping with page information
-        this.sendMessage({
-          type: "page_info",
-          url: window.location.href,
-          title: document.title,
-          timestamp: Date.now()
-        });
       };
 
       this.ws.onmessage = (event) => {
