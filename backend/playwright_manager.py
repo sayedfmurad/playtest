@@ -2,6 +2,10 @@ from contextlib import asynccontextmanager
 from playwright.async_api import async_playwright
 from pathlib import Path
 from fastapi import FastAPI
+import logging
+
+# Use Uvicorn's logger for colorized output consistent with server logs
+logger = logging.getLogger("uvicorn.error")
 
 # Global variables to store Playwright instances
 playwright_instance = None
@@ -17,25 +21,25 @@ async def playwright_lifespan(app: FastAPI):
     # Startup: Initialize Playwright
     global playwright_instance, browser_context, current_page
     
-    print("Starting Playwright instance...")
+    logger.info("Starting Playwright instance...")
     playwright_instance = await async_playwright().start()
     
     # Set up extension directory with absolute path
     EXT_DIR = str(Path(__file__).parent.parent / "extension")
-    print(f"Extension directory: {EXT_DIR}")
+    logger.info(f"Extension directory: {EXT_DIR}")
     
     # Verify extension directory exists
     if not Path(EXT_DIR).exists():
-        print(f"ERROR: Extension directory not found: {EXT_DIR}")
+        logger.error(f"Extension directory not found: {EXT_DIR}")
         raise FileNotFoundError(f"Extension directory not found: {EXT_DIR}")
     
     # Verify manifest.json exists
     manifest_path = Path(EXT_DIR) / "manifest.json"
     if not manifest_path.exists():
-        print(f"ERROR: Manifest file not found: {manifest_path}")
+        logger.error(f"Manifest file not found: {manifest_path}")
         raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
     
-    print(f"Loading extension from: {EXT_DIR}")
+    logger.info(f"Loading extension from: {EXT_DIR}")
     
     # Launch browser with persistent context for extensions
     import tempfile
@@ -64,12 +68,12 @@ async def playwright_lifespan(app: FastAPI):
     yield  # Server is running
     
     # Shutdown: Clean up Playwright
-    print("Shutting down Playwright instance...")
+    logger.info("Shutting down Playwright instance...")
     if browser_context:
         await browser_context.close()
     if playwright_instance:
         await playwright_instance.stop()
-    print("Playwright instance stopped.")
+    logger.info("Playwright instance stopped.")
 
 def get_current_page():
     """Get the current Playwright page instance."""

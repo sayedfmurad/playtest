@@ -1,6 +1,10 @@
 from fastapi import WebSocket
 from typing import List
 import json
+import logging
+
+# Use Uvicorn's logger for colorized output
+logger = logging.getLogger("uvicorn.error")
 
 
 class ConnectionManager:
@@ -10,11 +14,11 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
-        print(f"Client connected. Total connections: {len(self.active_connections)}")
+        logger.info(f"Client connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
-        print(f"Client disconnected. Total connections: {len(self.active_connections)}")
+        logger.info(f"Client disconnected. Total connections: {len(self.active_connections)}")
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
@@ -23,6 +27,7 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except:
+            except Exception:
                 # Remove dead connections
                 self.active_connections.remove(connection)
+                logger.warning("Removed a dead WebSocket connection during broadcast")

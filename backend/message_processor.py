@@ -2,11 +2,16 @@ from fastapi import WebSocket
 from connection_manager import ConnectionManager
 from playwright_manager import get_current_page
 import json
+import logging
+
+# Use Uvicorn's logger for colorized output
+logger = logging.getLogger("uvicorn.error")
 
 
 async def process_message(data: str, manager: ConnectionManager, websocket: WebSocket):
     try:
         message = json.loads(data)
+        logger.info("Processing incoming message")
 
         # Send acknowledgment
         response1 = {
@@ -55,11 +60,13 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
                 })
 
             except Exception as e:
+                logger.exception("Playwright operation failed")
                 playwright_data = {
                     "error": f"Playwright operation failed: {str(e)}",
                     "ready": False
                 }
         else:
+            logger.warning("Playwright not ready when processing message")
             playwright_data = {
                 "error": "Playwright not ready",
                 "ready": False
@@ -75,6 +82,7 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
         await manager.send_personal_message(json.dumps(response3), websocket)
 
     except json.JSONDecodeError:
+        logger.error("Received invalid JSON format from client")
         error_response = {
             "type": "error",
             "message": "Invalid JSON format"

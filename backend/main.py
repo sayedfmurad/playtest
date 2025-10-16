@@ -6,9 +6,13 @@ import json
 import asyncio
 from typing import List
 from message_processor import process_message
+import logging
 
 # Initialize connection manager
 manager = ConnectionManager()
+
+# Use Uvicorn's logger for colorized output
+logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(lifespan=playwright_lifespan)
 
@@ -20,8 +24,10 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Wait for message from client
             data = await websocket.receive_text()
+            logger.info("Received message from client; scheduling processing task")
             # Process message asynchronously without waiting
             asyncio.create_task(process_message(data, manager, websocket))
                 
     except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
         manager.disconnect(websocket)

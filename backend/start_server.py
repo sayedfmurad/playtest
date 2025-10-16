@@ -4,9 +4,12 @@ Startup script for the FastAPI server with integrated Playwright.
 This replaces the old run.py for production use.
 """
 import uvicorn
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 
 if __name__ == "__main__":
-    print("Starting FastAPI server with Playwright integration...")
+    logger.info("Starting FastAPI server with Playwright integration...")
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
