@@ -12,7 +12,6 @@ class ExtensionWebSocket {
       this.ws = new WebSocket("ws://127.0.0.1:8000/ws");
       
       this.ws.onopen = () => {
-        console.log("[EXT] WebSocket connected");
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         
@@ -28,8 +27,6 @@ class ExtensionWebSocket {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("[EXT] WebSocket response:", data);
-          
           // Handle different response types
           switch (data.type) {
             case "pong":
@@ -44,8 +41,6 @@ class ExtensionWebSocket {
             case "error":
               console.error("[EXT] Server error:", data.message);
               break;
-            default:
-              console.log("[EXT] Unknown message type:", data);
           }
         } catch (e) {
           console.error("[EXT] Failed to parse WebSocket message:", e);
