@@ -7,7 +7,6 @@ import json
 async def process_message(data: str, manager: ConnectionManager, websocket: WebSocket):
     try:
         message = json.loads(data)
-        print(f"Received from extension: {message}")
 
         # Send acknowledgment
         response1 = {

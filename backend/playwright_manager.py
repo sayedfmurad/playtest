@@ -58,17 +58,8 @@ async def playwright_lifespan(app: FastAPI):
         # If no page exists yet, wait for the first one instead of creating a new tab
         current_page = await browser_context.wait_for_event("page")
     
-    # Set up console logging
-    def on_console(msg):
-        print("PAGE CONSOLE:", msg.text)
-    current_page.on("console", on_console)
-    
     # Navigate to initial page
     await current_page.goto("https://example.com", wait_until="domcontentloaded")
-    
-    print("Playwright instance started and ready!")
-    print("WebSocket API server running on ws://127.0.0.1:8000/ws")
-    print("Extension should connect via WebSocket and send page information.")
     
     yield  # Server is running
     
