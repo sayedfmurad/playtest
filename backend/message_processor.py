@@ -26,45 +26,29 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
         current_page = get_current_page()
         if current_page:
             try:
-                # You can add more Playwright operations here based on the message content
-                # For example, if the message contains a URL to navigate to:
-                if message.get("action") == "navigate" and message.get("url"):
-                    await current_page.goto(message["url"], wait_until="domcontentloaded")
-                    page_title = await current_page.title()
-                    page_url = current_page.url
-
+                if message.get("type") == "ping":
+                    # Handle ping message
+                    playwright_data = {"status": "pong sent"}
                 # If the message asks for page content
-                elif message.get("action") == "get_content":
+                if message.get("action") == "get_content":
                     page_content = await current_page.content()
                     playwright_data["content_length"] = len(page_content)
-
-                # If the message asks for a screenshot
-                elif message.get("action") == "screenshot":
-                    screenshot = await current_page.screenshot()
-                    playwright_data["screenshot_size"] = len(screenshot)
-
-                playwright_data.update({
-                    "ready": True
-                })
 
             except Exception as e:
                 logger.exception("Playwright operation failed")
                 playwright_data = {
-                    "error": f"Playwright operation failed: {str(e)}",
-                    "ready": False
+                    "error": f"Playwright operation failed: {str(e)}"
                 }
         else:
             logger.warning("Playwright not ready when processing message")
             playwright_data = {
                 "error": "Playwright not ready",
-                "ready": False
             }
 
         # Send result with Playwright data
         response3 = {
             "type": "result",
             "message": "Processing completed",
-            "original_data": message,
             "playwright_data": playwright_data
         }
         await manager.send_personal_message(json.dumps(response3), websocket)
