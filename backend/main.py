@@ -24,7 +24,6 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Wait for message from client
             data = await websocket.receive_text()
-            logger.info("Received message from client; scheduling processing task")
             # Process message asynchronously without waiting
             asyncio.create_task(process_message(data, manager, websocket))
                 

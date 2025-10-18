@@ -11,7 +11,7 @@ logger = logging.getLogger("uvicorn.error")
 async def process_message(data: str, manager: ConnectionManager, websocket: WebSocket):
     try:
         message = json.loads(data)
-        logger.info("Processing incoming message")
+        logger.info("Processing incoming message: " + str(message))
 
 
         # Send processing status
