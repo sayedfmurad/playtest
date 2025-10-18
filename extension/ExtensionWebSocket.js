@@ -4,44 +4,63 @@ class ExtensionWebSocket {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // Start with 1 second
+    this.subscribers = new Set();
+    this.pending = new Map(); // id -> {resolve, reject, timeoutId}
+    this._idCounter = 0;
+    this.defaultTimeout = 30000; // 30s per command
     this.connect();
+  }
+
+  _nextId() {
+    this._idCounter = (this._idCounter + 1) % 1e9;
+    return `${Date.now()}-${this._idCounter}`;
   }
 
   connect() {
     try {
       this.ws = new WebSocket("ws://127.0.0.1:8000/ws");
-      
+
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
-        
       };
 
       this.ws.onmessage = (event) => {
+        let data = null;
         try {
-          const data = JSON.parse(event.data);
-          // Handle different response types
-          switch (data.type) {
-            case "pong":
-              console.log("[EXT] Pong received:", data.message);
-              break;
-            case "page_response":
-              console.log("[EXT] Page info processed:", data.processed_data);
-              break;
-            case "echo":
-              console.log("[EXT] Echo response:", data.original);
-              break;
-            case "error":
-              console.error("[EXT] Server error:", data.message);
-              break;
-          }
+          data = JSON.parse(event.data);
         } catch (e) {
           console.error("[EXT] Failed to parse WebSocket message:", e);
+          return;
         }
+
+        // Resolve pending promises by id for result messages
+        if (data && data.type === 'result' && data.id && this.pending.has(data.id)) {
+          const entry = this.pending.get(data.id);
+          this.pending.delete(data.id);
+          clearTimeout(entry.timeoutId);
+          if (data.status === 'ok') {
+            entry.resolve(data);
+          } else {
+            entry.reject(data);
+          }
+          return;
+        }
+
+        // Notify subscribers for any other message, including 'processing'
+        this.subscribers.forEach((fn) => {
+          try { fn(data); } catch {}
+        });
       };
 
       this.ws.onclose = (event) => {
         console.log("[EXT] WebSocket closed:", event.code, event.reason);
+        // Reject all pending requests on close
+        this.pending.forEach((entry, id) => {
+          clearTimeout(entry.timeoutId);
+          entry.reject({ type: 'error', message: 'WebSocket closed', id });
+        });
+        this.pending.clear();
         this.attemptReconnect();
       };
 
@@ -59,11 +78,11 @@ class ExtensionWebSocket {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`[EXT] Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${this.reconnectDelay}ms`);
-      
+
       setTimeout(() => {
         this.connect();
       }, this.reconnectDelay);
-      
+
       // Exponential backoff
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
     } else {
@@ -71,27 +90,45 @@ class ExtensionWebSocket {
     }
   }
 
-  sendMessage(message) {
+  subscribe(fn) { this.subscribers.add(fn); }
+  unsubscribe(fn) { try { this.subscribers.delete(fn); } catch {} }
+
+  _send(message) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
+      return true;
     } else {
       console.warn("[EXT] WebSocket not connected. Message not sent:", message);
+      return false;
     }
   }
 
-  sendPing() {
-    this.sendMessage({
-      type: "ping",
-      data: {
-        url: window.location.href,
-        timestamp: Date.now()
+  sendCommand(payload, { timeoutMs } = {}) {
+    const id = payload.id || this._nextId();
+    const message = { id, ...payload };
+    const tmo = typeof timeoutMs === 'number' ? timeoutMs : (payload.options?.timeout ?? this.defaultTimeout);
+
+    return new Promise((resolve, reject) => {
+      const sent = this._send(message);
+      if (!sent) {
+        reject({ type: 'error', message: 'WebSocket not connected', id });
+        return;
       }
+      const timeoutId = setTimeout(() => {
+        this.pending.delete(id);
+        reject({ type: 'result', id, status: 'error', error: { name: 'TimeoutError', message: `Request timed out after ${tmo}ms` } });
+      }, tmo);
+      this.pending.set(id, { resolve, reject, timeoutId });
     });
+  }
+
+  sendPing() {
+    return this.sendCommand({ type: 'ping' }, { timeoutMs: 5000 });
   }
 
   close() {
     if (this.ws) {
-      this.ws.close();
+      try { this.ws.close(); } catch {}
     }
   }
 }

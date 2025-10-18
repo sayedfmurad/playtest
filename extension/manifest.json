@@ -4,9 +4,10 @@
   "version": "0.0.2",
   "description": "Connects to a local Python API via WebSocket for real-time communication.",
   "action": {
-    "default_title": "Quick WebSocket to Local API",
-    "default_popup": "popup.html"
+    "default_title": "Quick WebSocket to Local API"
   },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["tabs", "storage", "windows"],
   "host_permissions": ["http://127.0.0.1:8000/*", "ws://127.0.0.1:8000/*"],
   "content_scripts": [
     {
