@@ -33,7 +33,7 @@ def _build_ok(message_id: Any, details: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _build_error(message_id: Any, action: str, err: Exception, elapsed_ms: int, screenshot_b64: Optional[str]) -> Dict[str, Any]:
+def _build_error(message_id: Any, action: str, err: Exception, elapsed_ms: int) -> Dict[str, Any]:
     return {
         "type": "result",
         "id": message_id,
@@ -44,7 +44,6 @@ def _build_error(message_id: Any, action: str, err: Exception, elapsed_ms: int, 
             "stack": traceback.format_exc(),
         },
         "details": {"elapsedMs": elapsed_ms},
-        "screenshot": screenshot_b64,
     }
 
 
@@ -504,8 +503,7 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
             await manager.send_personal_message(json.dumps(response), websocket)
         except Exception as e:
             elapsed_ms = int((time.monotonic() - started) * 1000)
-            shot = await _screenshot_base64(current_page, full_page=False)
-            response = _build_error(message.get("id"), action or "<none>", e, elapsed_ms, shot)
+            response = _build_error(message.get("id"), action or "<none>", e, elapsed_ms)
             await manager.send_personal_message(json.dumps(response), websocket)
 
     except json.JSONDecodeError:

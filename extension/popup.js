@@ -429,7 +429,7 @@
             s.status === 'processing' && React.createElement('span', { className: 'spinner' }),
             s.status === 'ok' && React.createElement('span', { className: 'pill pill-ok' }, 'ok'),
             s.status === 'error' && React.createElement('span', { className: 'pill pill-err' }, 'error'),
-            s.error && React.createElement('span', { className: 'small ml6' }, s.error)
+            s.error && React.createElement('pre', { className: 'small ml6', style: { margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' } }, s.error)
           )
         );
       }),
