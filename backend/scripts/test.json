@@ -3,7 +3,7 @@
   "steps": [
     {
       "target": {
-        "selector": "$id"
+        "selector": "$iddd"
       },
       "action": "click"
     }

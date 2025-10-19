@@ -155,6 +155,10 @@
     const [stopOnError, setStopOnError] = useState(true);
     const [scripts, setScripts] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [saveName, setSaveName] = useState('');
+    const [showLoadModal, setShowLoadModal] = useState(false);
+    const [currentScriptName, setCurrentScriptName] = useState(null);
 
     // Persist to storage
     useEffect(() => {
@@ -277,7 +281,15 @@
     }
 
     async function onSave() {
-      const name = prompt('Save as (name):');
+      if (currentScriptName) {
+        saveCurrent();
+      } else {
+        setShowSaveModal(true);
+      }
+    }
+
+    async function confirmSave() {
+      const name = saveName.trim();
       if (!name) return;
       setSaving(true);
       try {
@@ -291,6 +303,33 @@
           return d;
         });
         await apiSave(name, out);
+        const lst = await apiList();
+        setScripts(lst.items || []);
+        alert('Saved');
+        setCurrentScriptName(name);
+      } catch (e) {
+        alert('Save failed: ' + String(e));
+      } finally {
+        setSaving(false);
+        setShowSaveModal(false);
+        setSaveName('');
+      }
+    }
+
+    async function saveCurrent() {
+      if (!currentScriptName) return;
+      setSaving(true);
+      try {
+        const out = steps.map(s => {
+          const d = { action: s.action };
+          if (s.selector) d.target = { selector: s.selector };
+          if (s.value !== '' && s.value !== undefined) d.value = s.value;
+          if (s.optionsText) { try { d.options = JSON.parse(s.optionsText); } catch { d.optionsText = s.optionsText; } }
+          if (s.storeAs) d.storeAs = s.storeAs;
+          if (s.enabled === false) d.enabled = false;
+          return d;
+        });
+        await apiSave(currentScriptName, out);
         const lst = await apiList();
         setScripts(lst.items || []);
         alert('Saved');
@@ -320,24 +359,43 @@
       }
     }
 
+    async function loadScript(name) {
+      try {
+        const data = await apiLoad(name);
+        const loaded = (data.steps || []).map(s => ({
+          id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+          action: s.action || 'click',
+          selector: (s.target && s.target.selector) || s.selector || '',
+          value: s.value || '',
+          optionsText: s.options ? JSON.stringify(s.options) : (s.optionsText || ''),
+          storeAs: s.storeAs || '',
+          status: 'idle', error: '', enabled: s.enabled !== false
+        }));
+        setSteps(loaded.length ? loaded : [blankStep()]);
+        setCurrentScriptName(name);
+        setShowLoadModal(false);
+      } catch (e) {
+        alert('Load failed: ' + String(e));
+      }
+    }
+
     function onNew() {
       setSteps([blankStep()]);
+      setCurrentScriptName(null);
     }
 
     return React.createElement('div', { className: 'steps' },
       !tabId && React.createElement('div', { className: 'notice' }, 'No target tab. Click the extension icon on the page you want to control.'),
       React.createElement('div', { className: 'steps-toolbar' },
         React.createElement('button', { className: 'btn btn-secondary', onClick: onNew }, 'New'),
-        React.createElement('select', { className: 'select', onChange: (e) => onLoad(e.target.value) },
-          React.createElement('option', { value: '' }, 'Load…'),
-          (scripts || []).map(s => React.createElement('option', { key: s.name, value: s.name }, s.name))
-        ),
+        React.createElement('button', { className: 'btn btn-secondary', onClick: () => setShowLoadModal(true) }, 'Load'),
         React.createElement('button', { className: 'btn', onClick: onSave, disabled: saving }, saving ? 'Saving…' : 'Save'),
         React.createElement('label', { className: 'small ml6' },
           React.createElement('input', { type: 'checkbox', checked: stopOnError, onChange: e => setStopOnError(e.target.checked) }),
           ' Stop on error'
         ),
-        React.createElement('button', { className: 'btn', onClick: playAll }, runningAll ? 'Running…' : 'Run all')
+        React.createElement('button', { className: 'btn', onClick: playAll }, runningAll ? 'Running…' : 'Run all'),
+        React.createElement('span', { className: 'small ml6' }, currentScriptName ? `Script: ${currentScriptName}` : 'New script')
       ),
       steps.map((s, idx) => {
         const actionMeta = ACTIONS.find(a => a.value === s.action) || {};
@@ -370,7 +428,43 @@
             s.error && React.createElement('span', { className: 'small ml6' }, s.error)
           )
         );
-      })
+      }),
+      showSaveModal && React.createElement('div', { className: 'modal-backdrop', style: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 1040 }, onClick: () => setShowSaveModal(false) }),
+      showSaveModal && React.createElement('div', { className: 'modal', style: { display: 'block', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1050 } },
+        React.createElement('div', { className: 'modal-dialog' },
+          React.createElement('div', { className: 'modal-content' },
+            React.createElement('div', { className: 'modal-header' },
+              React.createElement('h5', { className: 'modal-title' }, 'Save Script'),
+              React.createElement('button', { type: 'button', className: 'btn-close', onClick: () => setShowSaveModal(false) })
+            ),
+            React.createElement('div', { className: 'modal-body' },
+              React.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Script name', value: saveName, onChange: e => setSaveName(e.target.value) })
+            ),
+            React.createElement('div', { className: 'modal-footer' },
+              React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: () => setShowSaveModal(false) }, 'Cancel'),
+              React.createElement('button', { type: 'button', className: 'btn btn-primary', onClick: confirmSave, disabled: saving }, saving ? 'Saving...' : 'Save')
+            )
+          )
+        )
+      ),
+      showLoadModal && React.createElement('div', { className: 'modal-backdrop', style: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 1040 }, onClick: () => setShowLoadModal(false) }),
+      showLoadModal && React.createElement('div', { className: 'modal', style: { display: 'block', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1050 } },
+        React.createElement('div', { className: 'modal-dialog' },
+          React.createElement('div', { className: 'modal-content' },
+            React.createElement('div', { className: 'modal-header' },
+              React.createElement('h5', { className: 'modal-title' }, 'Load Script'),
+              React.createElement('button', { type: 'button', className: 'btn-close', onClick: () => setShowLoadModal(false) })
+            ),
+            React.createElement('div', { className: 'modal-body' },
+              (scripts || []).length === 0 ? React.createElement('p', null, 'No scripts saved.') :
+              (scripts || []).map(s => React.createElement('button', { key: s.name, className: 'btn btn-secondary w-100 mb-2', onClick: () => loadScript(s.name) }, s.name))
+            ),
+            React.createElement('div', { className: 'modal-footer' },
+              React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: () => setShowLoadModal(false) }, 'Cancel')
+            )
+          )
+        )
+      )
     );
   }
 
