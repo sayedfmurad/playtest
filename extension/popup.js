@@ -137,9 +137,9 @@
     return r.json();
   }
 
-  function Header({ status, onPing, lastMsg }){
+  function Header({ status, onPing, lastMsg, scriptName }){
     return React.createElement('div', { className: 'header' },
-      React.createElement('div', { className: 'title' }, 'Playtest'),
+      React.createElement('div', { className: 'title' }, scriptName ? `Playtest | ${scriptName}` : 'Playtest'),
       React.createElement('div', { className: 'header-right' },
         React.createElement('button', { className: 'btn btn-secondary', onClick: onPing }, 'Ping'),
         React.createElement('span', { className: 'badge' }, status),
@@ -148,7 +148,7 @@
     );
   }
 
-  function StepsBuilder({ tabId }){
+  function StepsBuilder({ tabId, onScriptNameChange }){
     const { useState, useEffect } = React;
     const [steps, setSteps] = useState([blankStep()]);
     const [runningAll, setRunningAll] = useState(false);
@@ -164,6 +164,11 @@
     useEffect(() => {
       try { chrome.storage?.local?.set({ playtest_steps: steps, playtest_stopOnError: stopOnError }); } catch {}
     }, [steps, stopOnError]);
+
+    // Notify parent of script name changes
+    useEffect(() => {
+      if (onScriptNameChange) onScriptNameChange(currentScriptName);
+    }, [currentScriptName, onScriptNameChange]);
 
     // Restore on mount and fetch scripts list
     useEffect(() => {
@@ -394,8 +399,7 @@
           React.createElement('input', { type: 'checkbox', checked: stopOnError, onChange: e => setStopOnError(e.target.checked) }),
           ' Stop on error'
         ),
-        React.createElement('button', { className: 'btn', onClick: playAll }, runningAll ? 'Running…' : 'Run all'),
-        React.createElement('span', { className: 'small ml6' }, currentScriptName ? `Script: ${currentScriptName}` : 'New script')
+        React.createElement('button', { className: 'btn', onClick: playAll }, runningAll ? 'Running…' : 'Run all')
       ),
       steps.map((s, idx) => {
         const actionMeta = ACTIONS.find(a => a.value === s.action) || {};
@@ -473,6 +477,7 @@
     const tabId = useTargetTabId();
     const [status, setStatus] = useState('connecting');
     const [lastMsg, setLastMsg] = useState(null);
+    const [scriptName, setScriptName] = useState(null);
 
     useEffect(() => {
       if (!tabId) { setStatus('no-target'); return; }
@@ -493,9 +498,9 @@
     }
 
     return React.createElement(React.Fragment, null,
-      React.createElement(Header, { status, onPing: ping, lastMsg }),
+      React.createElement(Header, { status, onPing: ping, lastMsg, scriptName }),
       React.createElement('div', { className: 'body' },
-        React.createElement(StepsBuilder, { tabId })
+        React.createElement(StepsBuilder, { tabId, onScriptNameChange: setScriptName })
       )
     );
   }
