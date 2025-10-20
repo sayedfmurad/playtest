@@ -433,16 +433,16 @@
           )
         );
       }),
-      showSaveModal && React.createElement('div', { className: 'modal-backdrop', style: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 1040 }, onClick: () => setShowSaveModal(false) }),
-      showSaveModal && React.createElement('div', { className: 'modal', style: { display: 'block', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1050 } },
+      showSaveModal && React.createElement('div', { className: 'modal-backdrop', onClick: () => setShowSaveModal(false) }),
+      showSaveModal && React.createElement('div', { className: 'modal' },
         React.createElement('div', { className: 'modal-dialog' },
-          React.createElement('div', { className: 'modal-content' },
+          React.createElement('div', { className: 'modal-content', onClick: e => e.stopPropagation() },
             React.createElement('div', { className: 'modal-header' },
               React.createElement('h5', { className: 'modal-title' }, 'Save Script'),
               React.createElement('button', { type: 'button', className: 'btn-close', onClick: () => setShowSaveModal(false) })
             ),
             React.createElement('div', { className: 'modal-body' },
-              React.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Script name', value: saveName, onChange: e => setSaveName(e.target.value) })
+              React.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Script name', value: saveName, onChange: e => setSaveName(e.target.value), onKeyDown: e => e.key === 'Enter' && confirmSave() })
             ),
             React.createElement('div', { className: 'modal-footer' },
               React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: () => setShowSaveModal(false) }, 'Cancel'),
@@ -451,10 +451,10 @@
           )
         )
       ),
-      showLoadModal && React.createElement('div', { className: 'modal-backdrop', style: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 1040 }, onClick: () => setShowLoadModal(false) }),
-      showLoadModal && React.createElement('div', { className: 'modal', style: { display: 'block', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1050 } },
+      showLoadModal && React.createElement('div', { className: 'modal-backdrop', onClick: () => setShowLoadModal(false) }),
+      showLoadModal && React.createElement('div', { className: 'modal' },
         React.createElement('div', { className: 'modal-dialog' },
-          React.createElement('div', { className: 'modal-content' },
+          React.createElement('div', { className: 'modal-content', onClick: e => e.stopPropagation() },
             React.createElement('div', { className: 'modal-header' },
               React.createElement('h5', { className: 'modal-title' }, 'Load Script'),
               React.createElement('button', { type: 'button', className: 'btn-close', onClick: () => setShowLoadModal(false) })
