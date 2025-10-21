@@ -104,9 +104,10 @@
     { value: 'screenshot', label: 'Screenshot', needsSelector: false },
   ];
 
-  function blankStep() {
+  function blankStep(index = 0) {
     return {
       id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+      name: `Task ${index + 1}`,
       action: 'click',
       selector: '',
       value: '',
@@ -150,7 +151,7 @@
 
   function StepsBuilder({ tabId, onScriptNameChange }){
     const { useState, useEffect } = React;
-    const [steps, setSteps] = useState([blankStep()]);
+    const [steps, setSteps] = useState([blankStep(0)]);
     const [runningAll, setRunningAll] = useState(false);
     const [stopOnError, setStopOnError] = useState(true);
     const [scripts, setScripts] = useState([]);
@@ -200,7 +201,7 @@
     }
 
     function addStep() {
-      setSteps((arr) => [...arr, blankStep()]);
+      setSteps((arr) => [...arr, blankStep(arr.length)]);
     }
 
     function deleteStep(id) {
@@ -211,7 +212,7 @@
       setSteps((arr) => {
         const idx = arr.findIndex(s => s.id === id);
         if (idx === -1) return arr;
-        const copy = { ...arr[idx], id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`, status: 'idle', error: '' };
+        const copy = { ...arr[idx], id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`, name: `${arr[idx].name} (copy)`, status: 'idle', error: '' };
         const out = arr.slice();
         out.splice(idx+1, 0, copy);
         return out;
@@ -300,6 +301,7 @@
       try {
         const out = steps.map(s => {
           const d = { action: s.action };
+          if (s.name) d.name = s.name;
           if (s.selector) d.target = { selector: s.selector };
           if (s.value !== '' && s.value !== undefined) d.value = s.value;
           if (s.optionsText) { try { d.options = JSON.parse(s.optionsText); } catch { d.optionsText = s.optionsText; } }
@@ -327,6 +329,7 @@
       try {
         const out = steps.map(s => {
           const d = { action: s.action };
+          if (s.name) d.name = s.name;
           if (s.selector) d.target = { selector: s.selector };
           if (s.value !== '' && s.value !== undefined) d.value = s.value;
           if (s.optionsText) { try { d.options = JSON.parse(s.optionsText); } catch { d.optionsText = s.optionsText; } }
@@ -349,8 +352,9 @@
       if (!name) return;
       try {
         const data = await apiLoad(name);
-        const loaded = (data.steps || []).map(s => ({
+        const loaded = (data.steps || []).map((s, idx) => ({
           id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+          name: s.name || `Task ${idx + 1}`,
           action: s.action || 'click',
           selector: (s.target && s.target.selector) || s.selector || '',
           value: s.value || '',
@@ -358,7 +362,7 @@
           storeAs: s.storeAs || '',
           status: 'idle', error: '', enabled: s.enabled !== false
         }));
-        setSteps(loaded.length ? loaded : [blankStep()]);
+        setSteps(loaded.length ? loaded : [blankStep(0)]);
       } catch (e) {
         alert('Load failed: ' + String(e));
       }
@@ -367,8 +371,9 @@
     async function loadScript(name) {
       try {
         const data = await apiLoad(name);
-        const loaded = (data.steps || []).map(s => ({
+        const loaded = (data.steps || []).map((s, idx) => ({
           id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+          name: s.name || `Task ${idx + 1}`,
           action: s.action || 'click',
           selector: (s.target && s.target.selector) || s.selector || '',
           value: s.value || '',
@@ -376,7 +381,7 @@
           storeAs: s.storeAs || '',
           status: 'idle', error: '', enabled: s.enabled !== false
         }));
-        setSteps(loaded.length ? loaded : [blankStep()]);
+        setSteps(loaded.length ? loaded : [blankStep(0)]);
         setCurrentScriptName(name);
         setShowLoadModal(false);
       } catch (e) {
@@ -385,7 +390,7 @@
     }
 
     function onNew() {
-      setSteps([blankStep()]);
+      setSteps([blankStep(0)]);
       setCurrentScriptName(null);
     }
 
@@ -404,6 +409,19 @@
       steps.map((s, idx) => {
         const actionMeta = ACTIONS.find(a => a.value === s.action) || {};
         return React.createElement('div', { key: s.id, className: 'step' },
+          React.createElement('div', { className: 'step-name-row' },
+            React.createElement('input', {
+              type: 'text',
+              className: 'step-name-input',
+              value: s.name !== undefined ? s.name : `Task ${idx + 1}`,
+              onChange: e => updateStep(s.id, { name: e.target.value }),
+              onBlur: () => {
+                // Auto-save on blur - persist to storage
+                try { chrome.storage?.local?.set({ playtest_steps: steps }); } catch {}
+              },
+              placeholder: `Task ${idx + 1}`
+            })
+          ),
           React.createElement('div', { className: 'step-left' },
             React.createElement('input', { type: 'checkbox', checked: !!s.enabled, onChange: e => updateStep(s.id, { enabled: e.target.checked }) }),
             React.createElement('span', { className: 'step-index' }, String(idx+1).padStart(2, '0')),
