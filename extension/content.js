@@ -222,8 +222,12 @@ if (!window.extensionWS) {
       const sel = `#${CSS.escape(id)}`;
       if (document.querySelectorAll(sel).length === 1) return sel;
     }
-    // Build a class-based selector limited to first two classes
-    const classes = Array.from(el.classList || []).slice(0, 2).map(c => `.${CSS.escape(c)}`).join('');
+    // Build a class-based selector limited to first two classes (excluding picker highlight)
+    const classes = Array.from(el.classList || [])
+      .filter(c => c !== '__pt_pick_highlight__')
+      .slice(0, 2)
+      .map(c => `.${CSS.escape(c)}`)
+      .join('');
     const tag = el.tagName.toLowerCase();
     let candidate = `${tag}${classes}`;
     if (candidate && document.querySelectorAll(candidate).length === 1) return candidate;
@@ -235,7 +239,11 @@ if (!window.extensionWS) {
     while (node && node.nodeType === 1 && depth < 4) {
       let part = node.tagName.toLowerCase();
       if (node.id) { part += `#${CSS.escape(node.id)}`; parts.unshift(part); break; }
-      const cls = Array.from(node.classList || []).slice(0, 1).map(c => `.${CSS.escape(c)}`).join('');
+      const cls = Array.from(node.classList || [])
+        .filter(c => c !== '__pt_pick_highlight__')
+        .slice(0, 1)
+        .map(c => `.${CSS.escape(c)}`)
+        .join('');
       part += cls;
       parts.unshift(part);
       node = node.parentElement;
