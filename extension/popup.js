@@ -400,6 +400,7 @@
         React.createElement('button', { className: 'btn btn-secondary', onClick: onNew }, 'New'),
         React.createElement('button', { className: 'btn btn-secondary', onClick: () => setShowLoadModal(true) }, 'Load'),
         React.createElement('button', { className: 'btn', onClick: onSave, disabled: saving }, saving ? 'Saving…' : 'Save'),
+        React.createElement('button', { className: 'btn', onClick: addStep }, '+ Add Step'),
         React.createElement('label', { className: 'small ml6' },
           React.createElement('input', { type: 'checkbox', checked: stopOnError, onChange: e => setStopOnError(e.target.checked) }),
           ' Stop on error'
