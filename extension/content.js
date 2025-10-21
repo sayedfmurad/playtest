@@ -284,10 +284,6 @@ if (!window.extensionWS) {
 
   function onClick(e) {
     if (!picking) return;
-    // Don't interfere with select dropdowns
-    if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
-      return;
-    }
     e.preventDefault();
     e.stopPropagation();
     const el = e.target;

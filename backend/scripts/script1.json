@@ -1,0 +1,19 @@
+{
+  "name": "script1",
+  "steps": [
+    {
+      "target": {
+        "selector": "h1"
+      },
+      "action": "getText",
+      "storeAs": "text1"
+    },
+    {
+      "target": {
+        "selector": "[aria-label=\"Suchbegriff\\ \\.\\.\\.\"]"
+      },
+      "action": "fill",
+      "value": "${text1}"
+    }
+  ]
+}

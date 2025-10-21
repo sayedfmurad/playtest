@@ -312,7 +312,6 @@
         await apiSave(name, out);
         const lst = await apiList();
         setScripts(lst.items || []);
-        alert('Saved');
         setCurrentScriptName(name);
       } catch (e) {
         alert('Save failed: ' + String(e));
@@ -340,7 +339,7 @@
         await apiSave(currentScriptName, out);
         const lst = await apiList();
         setScripts(lst.items || []);
-        alert('Saved');
+
       } catch (e) {
         alert('Save failed: ' + String(e));
       } finally {
