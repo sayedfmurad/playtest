@@ -499,7 +499,7 @@
 
     return React.createElement(React.Fragment, null,
       React.createElement(Header, { status, onPing: ping, lastMsg, scriptName }),
-      React.createElement('div', { className: 'body' },
+      React.createElement('div', { className: 'body mb-5' },
         React.createElement(StepsBuilder, { tabId, onScriptNameChange: setScriptName })
       )
     );

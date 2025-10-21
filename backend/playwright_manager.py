@@ -50,7 +50,10 @@ async def playwright_lifespan(app: FastAPI):
         headless=False,
         args=[
             f"--disable-extensions-except={EXT_DIR}",
-            f"--load-extension={EXT_DIR}"
+            f"--load-extension={EXT_DIR}",
+            # Ensure native UI like <select> positions correctly by avoiding DPI scaling
+            "--high-dpi-support=1",
+            "--force-device-scale-factor=1",
         ],
     )
     
@@ -61,6 +64,12 @@ async def playwright_lifespan(app: FastAPI):
     else:
         # If no page exists yet, wait for the first one instead of creating a new tab
         current_page = await browser_context.wait_for_event("page")
+
+    # Normalize viewport to reduce OS/zoom related UI glitches
+    try:
+        await current_page.set_viewport_size({"width": 1440, "height": 900})
+    except Exception as e:
+        logger.warning(f"Failed to set viewport size: {e}")
     
     # Navigate to initial page
     await current_page.goto("https://example.com", wait_until="domcontentloaded")
