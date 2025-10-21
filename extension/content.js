@@ -190,8 +190,17 @@ if (!window.extensionWS) {
     if (styleEl) return;
     styleEl = document.createElement('style');
     styleEl.textContent = `
-      .__pt_pick_highlight__ { outline: 2px solid #3b82f6 !important; cursor: crosshair !important; }
-      body.__pt_picking__ * { cursor: crosshair !important; }
+      .__pt_pick_highlight__ { 
+        outline: 2px solid #3b82f6 !important; 
+        cursor: crosshair !important; 
+      }
+      body.__pt_picking__ * { 
+        cursor: crosshair !important; 
+      }
+      body.__pt_picking__ select,
+      body.__pt_picking__ option {
+        cursor: pointer !important;
+      }
     `;
     document.documentElement.appendChild(styleEl);
   }
@@ -267,6 +276,10 @@ if (!window.extensionWS) {
 
   function onClick(e) {
     if (!picking) return;
+    // Don't interfere with select dropdowns
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     const el = e.target;
