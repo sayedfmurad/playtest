@@ -83,6 +83,7 @@
   const ACTIONS = [
     { value: 'goto', label: 'Goto URL', needsSelector: false, needsValue: true, valuePlaceholder: 'https://example.com' },
     { value: 'click', label: 'Click', needsSelector: true },
+    { value: 'clickPosition', label: 'Click Position (X,Y)', needsSelector: false, needsValue: true, valuePlaceholder: '{"x": 100, "y": 200}', needsPositionPicker: true },
     { value: 'dblclick', label: 'Double click', needsSelector: true },
     { value: 'hover', label: 'Hover', needsSelector: true },
     { value: 'fill', label: 'Fill input', needsSelector: true, needsValue: true, valuePlaceholder: 'text' },
@@ -236,6 +237,14 @@
     async function pickSelector(id) {
       const res = await sendToTab(tabId, { type: 'start_picker' });
       if (res && res.ok && res.selector) updateStep(id, { selector: res.selector });
+    }
+
+    async function pickPosition(id) {
+      const res = await sendToTab(tabId, { type: 'start_position_picker' });
+      if (res && res.ok && res.position) {
+        const posValue = JSON.stringify(res.position);
+        updateStep(id, { value: posValue });
+      }
     }
 
     function parseOptions(text) {
@@ -432,7 +441,8 @@
               React.createElement('input', { className: 'input flex1', placeholder: 'CSS selector or ${var}', value: s.selector, onChange: e => updateStep(s.id, { selector: e.target.value }) }),
               React.createElement('button', { className: 'btn btn-secondary', onClick: () => pickSelector(s.id) }, 'Pick')
             ),
-            actionMeta.needsValue && React.createElement('input', { className: 'input flex1', placeholder: actionMeta.valuePlaceholder || 'value', value: s.value, onChange: e => updateStep(s.id, { value: e.target.value }) })
+            actionMeta.needsValue && React.createElement('input', { className: 'input flex1', placeholder: actionMeta.valuePlaceholder || 'value', value: s.value, onChange: e => updateStep(s.id, { value: e.target.value }) }),
+            actionMeta.needsPositionPicker && React.createElement('button', { className: 'btn btn-secondary', onClick: () => pickPosition(s.id) }, 'Pick Position')
           ),
           React.createElement('div', { className: 'step-right' },
             React.createElement('input', { className: 'input input-sm', placeholder: 'storeAs (optional)', value: s.storeAs, onChange: e => updateStep(s.id, { storeAs: e.target.value }) }),

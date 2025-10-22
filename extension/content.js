@@ -182,9 +182,11 @@ if (!window.extensionWS) {
   window._ptPickerInit = true;
 
   let picking = false;
+  let pickingPosition = false;
   let hoverEl = null;
   let styleEl = null;
   let resolvePick = null;
+  let positionOverlay = null;
 
   function ensureStyle() {
     if (styleEl) return;
@@ -200,6 +202,45 @@ if (!window.extensionWS) {
       body.__pt_picking__ select,
       body.__pt_picking__ option {
         cursor: pointer !important;
+      }
+      .__pt_position_overlay__ {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(59, 130, 246, 0.1);
+        cursor: crosshair;
+        z-index: 2147483647;
+        pointer-events: auto;
+      }
+      .__pt_position_indicator__ {
+        position: fixed;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #3b82f6;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.2);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        z-index: 2147483648;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #1e40af;
+        font-weight: bold;
+      }
+      .__pt_position_coords__ {
+        position: fixed;
+        background: #1e40af;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 2147483649;
+        font-family: monospace;
       }
     `;
     document.documentElement.appendChild(styleEl);
@@ -270,10 +311,17 @@ if (!window.extensionWS) {
 
   function stopPicker(send, result) {
     picking = false;
+    pickingPosition = false;
     document.body.classList.remove('__pt_picking__');
     clearHighlight();
+    if (positionOverlay) {
+      positionOverlay.remove();
+      positionOverlay = null;
+    }
     window.removeEventListener('mousemove', onMove, true);
+    window.removeEventListener('mousemove', onPositionMove, true);
     window.removeEventListener('click', onClick, true);
+    window.removeEventListener('click', onPositionClick, true);
     window.removeEventListener('keydown', onKey, true);
     try { if (styleEl) styleEl.remove(); } catch {}
     styleEl = null;
@@ -302,13 +350,81 @@ if (!window.extensionWS) {
   }
 
   function startPicker(sendResponse) {
-    if (picking) return; // already
+    if (picking || pickingPosition) return; // already
     ensureStyle();
     picking = true;
+    pickingPosition = false;
     document.body.classList.add('__pt_picking__');
     window.addEventListener('mousemove', onMove, true);
     window.addEventListener('click', onClick, true);
     window.addEventListener('keydown', onKey, true);
+    // Store resolver so we can reply later
+    resolvePick = (res) => sendResponse(res);
+  }
+
+  function onPositionMove(e) {
+    if (!pickingPosition || !positionOverlay) return;
+    
+    // Get or create indicator elements
+    let indicator = positionOverlay.querySelector('.__pt_position_indicator__');
+    let coords = positionOverlay.querySelector('.__pt_position_coords__');
+    
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.className = '__pt_position_indicator__';
+      indicator.textContent = '+';
+      positionOverlay.appendChild(indicator);
+    }
+    
+    if (!coords) {
+      coords = document.createElement('div');
+      coords.className = '__pt_position_coords__';
+      positionOverlay.appendChild(coords);
+    }
+    
+    // Calculate absolute page coordinates including scroll offset
+    const pageX = e.clientX + window.scrollX;
+    const pageY = e.clientY + window.scrollY;
+    
+    // Update positions (indicator uses viewport coordinates since it's fixed position)
+    indicator.style.left = e.clientX + 'px';
+    indicator.style.top = e.clientY + 'px';
+    
+    // Display absolute page coordinates
+    coords.textContent = `X: ${pageX}, Y: ${pageY}`;
+    coords.style.left = (e.clientX + 25) + 'px';
+    coords.style.top = (e.clientY - 25) + 'px';
+  }
+
+  function onPositionClick(e) {
+    if (!pickingPosition) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Calculate absolute page coordinates including scroll offset
+    const position = { 
+      x: e.clientX + window.scrollX, 
+      y: e.clientY + window.scrollY 
+    };
+    const result = { ok: true, position };
+    stopPicker(() => {}, result);
+  }
+
+  function startPositionPicker(sendResponse) {
+    if (picking || pickingPosition) return; // already
+    ensureStyle();
+    pickingPosition = true;
+    picking = false;
+    
+    // Create overlay
+    positionOverlay = document.createElement('div');
+    positionOverlay.className = '__pt_position_overlay__';
+    document.body.appendChild(positionOverlay);
+    
+    positionOverlay.addEventListener('mousemove', onPositionMove, true);
+    positionOverlay.addEventListener('click', onPositionClick, true);
+    window.addEventListener('keydown', onKey, true);
+    
     // Store resolver so we can reply later
     resolvePick = (res) => sendResponse(res);
   }
@@ -319,6 +435,10 @@ if (!window.extensionWS) {
       if (!msg || typeof msg !== 'object') return;
       if (msg.type === 'start_picker') {
         startPicker(sendResponse);
+        return true; // async
+      }
+      if (msg.type === 'start_position_picker') {
+        startPositionPicker(sendResponse);
         return true; // async
       }
       if (msg.type === 'stop_picker') {

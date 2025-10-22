@@ -140,6 +140,73 @@ async def _act_click(page, message: Dict[str, Any]) -> Dict[str, Any]:
     return {"clicked": selector}
 
 
+async def _act_clickPosition(page, message: Dict[str, Any]) -> Dict[str, Any]:
+    """Click at specific X, Y coordinates on the page (absolute page coordinates)."""
+    value = message.get("value")
+    opts = message.get("options") or {}
+    
+    # Parse coordinates from value (can be JSON string or dict)
+    if isinstance(value, str):
+        try:
+            coords = json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            raise ValueError("clickPosition: 'value' must be a JSON object with 'x' and 'y' properties")
+    elif isinstance(value, dict):
+        coords = value
+    else:
+        raise ValueError("clickPosition: 'value' is required (JSON object with 'x' and 'y')")
+    
+    x = coords.get("x")
+    y = coords.get("y")
+    
+    if x is None or y is None:
+        raise ValueError("clickPosition: 'value' must contain 'x' and 'y' coordinates")
+    
+    try:
+        x = float(x)
+        y = float(y)
+    except (ValueError, TypeError):
+        raise ValueError("clickPosition: 'x' and 'y' must be numbers")
+    
+    # The coordinates are absolute page coordinates (including scroll offset)
+    # We need to scroll the position into view and then click at the viewport coordinates
+    # Use JavaScript to handle the scroll and calculate viewport position
+    # Using scrollTo with instant behavior to avoid animation delays
+    await page.evaluate("""
+        (coords) => {
+            const x = coords.x;
+            const y = coords.y;
+            
+            // Scroll to make the position visible in viewport
+            // We scroll so the position is roughly in the center of viewport if possible
+            const targetScrollX = Math.max(0, x - window.innerWidth / 2);
+            const targetScrollY = Math.max(0, y - window.innerHeight / 2);
+            
+            // Use instant scroll behavior to avoid animation delays
+            window.scrollTo({
+                left: targetScrollX,
+                top: targetScrollY,
+                behavior: 'instant'  // Instant scroll, no animation
+            });
+        }
+    """, {"x": x, "y": y})
+    
+    # Wait for scroll to complete and page to stabilize
+    await page.wait_for_timeout(300)
+    
+    # Get current scroll position to calculate viewport coordinates
+    scroll_pos = await page.evaluate("() => ({ x: window.scrollX, y: window.scrollY })")
+    
+    # Calculate viewport coordinates from page coordinates
+    viewport_x = x - scroll_pos["x"]
+    viewport_y = y - scroll_pos["y"]
+    
+    # Click at viewport coordinates
+    await page.mouse.click(viewport_x, viewport_y)
+    
+    return {"clicked": f"position ({x}, {y})", "pageX": x, "pageY": y, "viewportX": viewport_x, "viewportY": viewport_y}
+
+
 async def _act_dblclick(page, message: Dict[str, Any]) -> Dict[str, Any]:
     target = message.get("target") or {}
     selector = target.get("selector") if isinstance(target, dict) else target
@@ -427,6 +494,7 @@ ACTION_HANDLERS: Dict[str, Callable[[Any, Dict[str, Any]], Awaitable[Dict[str, A
     "waitTimeout": _act_waitTimeout,
     # Interactions
     "click": _act_click,
+    "clickPosition": _act_clickPosition,
     "dblclick": _act_dblclick,
     "fill": _act_fill,
     "type": _act_type,
