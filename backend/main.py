@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from connection_manager import ConnectionManager
 from playwright_manager import playwright_lifespan, get_current_page, get_browser_context
 import json
@@ -46,6 +47,15 @@ def _sanitize_name(name: str) -> str:
 class ScriptPayload(BaseModel):
     name: str
     steps: list
+
+
+@app.get("/test", response_class=HTMLResponse)
+async def test_page():
+    """Serve the test page for testing extension functionality"""
+    test_page_path = Path(__file__).parent / "test_page.html"
+    if not test_page_path.exists():
+        raise HTTPException(status_code=404, detail="Test page not found")
+    return HTMLResponse(content=test_page_path.read_text("utf-8"))
 
 
 @app.get("/scripts")

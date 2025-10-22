@@ -71,6 +71,7 @@ async def playwright_lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to set viewport size: {e}")
     
+    
     # Navigate to initial page
     await current_page.goto("https://example.com", wait_until="domcontentloaded")
     

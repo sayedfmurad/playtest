@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Test Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h2 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .test-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .click-area {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .click-area:hover {
+            background: #f0f0ff;
+            border-color: #5568d3;
+        }
+        
+        .click-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ff4444;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1s ease-in-out;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.5; }
+        }
+        
+        .hover-box {
+            padding: 20px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .hover-box:hover {
+            background: #ffc107;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .hidden-element {
+            display: none;
+            padding: 15px;
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .hidden-element.visible {
+            display: block;
+        }
+        
+        .output {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-left: 4px solid #667eea;
+            border-radius: 3px;
+            font-family: monospace;
+            min-height: 20px;
+        }
+        
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Extension Test Page</h1>
+        
+        <!-- Click Actions -->
+        <div class="test-section">
+            <h2>🖱️ Click Actions</h2>
+            
+            <div class="test-item">
+                <label>Simple Click</label>
+                <button id="simpleBtn">Click Me!</button>
+                <div id="clickOutput" class="output"></div>
+            </div>
+            
+            <div class="test-item">
+                <label>Double Click</label>
+                <button id="dblClickBtn">Double Click Me!</button>
+                <div id="dblClickOutput" class="output"></div>
+            </div>
+            
+            <div class="test-item">
+                <label>Position Click Area (Click anywhere inside)</label>
+                <div class="click-area" id="clickArea">
+                    Click anywhere in this box
+                </div>
+                <div id="positionOutput" class="output"></div>
+            </div>
+            
+            <div class="test-item">
+                <label>Hover Element</label>
+                <div class="hover-box" id="hoverBox">Hover over me!</div>
+                <div id="hoverOutput" class="output"></div>
+            </div>
+        </div>
+        
+        <!-- Input Actions -->
+        <div class="test-section">
+            <h2>⌨️ Input Actions</h2>
+            
+            <div class="test-item">
+                <label for="textInput">Text Input (fill)</label>
+                <input type="text" id="textInput" placeholder="Type or fill text here">
+            </div>
+            
+            <div class="test-item">
+                <label for="emailInput">Email Input</label>
+                <input type="email" id="emailInput" placeholder="email@example.com">
+            </div>
+            
+            <div class="test-item">
+                <label for="passwordInput">Password Input</label>
+                <input type="password" id="passwordInput" placeholder="Enter password">
+            </div>
+            
+            <div class="test-item">
+                <label for="numberInput">Number Input</label>
+                <input type="number" id="numberInput" placeholder="Enter number" min="0" max="100">
+            </div>
+            
+            <div class="test-item">
+                <label for="dateInput">Date Input</label>
+                <input type="date" id="dateInput">
+            </div>
+            
+            <div class="test-item">
+                <label for="textArea">Text Area</label>
+                <textarea id="textArea" rows="4" placeholder="Type multiple lines here..."></textarea>
+            </div>
+            
+            <div class="test-item">
+                <label for="fileInput">File Upload</label>
+                <input type="file" id="fileInput" multiple>
+                <div id="fileOutput" class="output"></div>
+            </div>
+        </div>
+        
+        <!-- Select and Options -->
+        <div class="test-section">
+            <h2>📋 Select Actions</h2>
+            
+            <div class="test-item">
+                <label for="selectCountry">Select Country</label>
+                <select id="selectCountry">
+                    <option value="">Choose a country...</option>
+                    <option value="us">United States</option>
+                    <option value="uk">United Kingdom</option>
+                    <option value="ca">Canada</option>
+                    <option value="au">Australia</option>
+                    <option value="de">Germany</option>
+                    <option value="fr">France</option>
+                    <option value="jp">Japan</option>
+                </select>
+                <div id="selectOutput" class="output"></div>
+            </div>
+            
+            <div class="test-item">
+                <label for="selectMultiple">Multiple Select</label>
+                <select id="selectMultiple" multiple size="5">
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                    <option value="green">Green</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="purple">Purple</option>
+                </select>
+            </div>
+            
+            <div class="test-item">
+                <label>Checkboxes</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="check1" value="option1"> Option 1</label>
+                    <label><input type="checkbox" id="check2" value="option2"> Option 2</label>
+                    <label><input type="checkbox" id="check3" value="option3"> Option 3</label>
+                    <label><input type="checkbox" id="check4" value="option4"> Option 4</label>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label>Radio Buttons</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="size" value="small"> Small</label>
+                    <label><input type="radio" name="size" value="medium"> Medium</label>
+                    <label><input type="radio" name="size" value="large"> Large</label>
+                    <label><input type="radio" name="size" value="xlarge"> X-Large</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wait and Visibility -->
+        <div class="test-section">
+            <h2>⏱️ Wait & Visibility Actions</h2>
+            
+            <div class="test-item">
+                <label>Toggle Visibility</label>
+                <button id="toggleBtn">Toggle Hidden Element</button>
+                <div id="hiddenElement" class="hidden-element">
+                    🎉 This element is now visible!
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label>Delayed Button</label>
+                <button id="delayedBtn">Show Button After 2 Seconds</button>
+                <button id="delayedTarget" style="display: none; background: #28a745;">
+                    Delayed Button Appeared!
+                </button>
+            </div>
+        </div>
+        
+        <!-- Get Value Actions -->
+        <div class="test-section">
+            <h2>📤 Get Value Actions</h2>
+            
+            <div class="test-item">
+                <label>Element with Text Content</label>
+                <div id="textElement" style="padding: 15px; background: #e3f2fd; border-radius: 5px;">
+                    This is some text content that can be extracted.
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label>Element with Attribute</label>
+                <div id="attrElement" data-test="test-value-123" data-custom="custom-data" 
+                     style="padding: 15px; background: #f3e5f5; border-radius: 5px;">
+                    Element with data-test="test-value-123" and data-custom="custom-data"
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label for="getValue">Input to Get Value From</label>
+                <input type="text" id="getValue" value="Initial value to extract">
+            </div>
+        </div>
+        
+        <!-- Assertions -->
+        <div class="test-section">
+            <h2>✅ Assertion Tests</h2>
+            
+            <div class="test-item">
+                <label>Visible Element</label>
+                <div id="visibleElement" style="padding: 15px; background: #d4edda; border-radius: 5px;">
+                    ✓ This element is visible (use expectExists)
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label>Hidden Element</label>
+                <div id="invisibleElement" style="display: none;">
+                    This element is hidden (use expectNotExists)
+                </div>
+                <div style="padding: 15px; background: #f8d7da; border-radius: 5px;">
+                    ✗ Element above is hidden
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <label>Element with Specific Text</label>
+                <div id="specificText" style="padding: 15px; background: #fff3cd; border-radius: 5px;">
+                    The quick brown fox jumps over the lazy dog
+                </div>
+                <small>Test with expectTextContains for "quick brown fox"</small>
+            </div>
+        </div>
+        
+        <!-- Keyboard Actions -->
+        <div class="test-section">
+            <h2>⌨️ Keyboard Actions</h2>
+            
+            <div class="test-item">
+                <label for="keyPressInput">Press Keys Test</label>
+                <input type="text" id="keyPressInput" placeholder="Focus and test keyboard actions">
+                <div id="keyPressOutput" class="output"></div>
+                <small>Try testing with press actions: Enter, Escape, Tab, ArrowUp, etc.</small>
+            </div>
+        </div>
+        
+        <!-- Complex Interactions -->
+        <div class="test-section">
+            <h2>🔄 Complex Interactions</h2>
+            
+            <div class="test-item">
+                <label>Multi-step Form</label>
+                <button id="showModal">Open Modal Form</button>
+            </div>
+            
+            <div class="test-item">
+                <label>Button Grid (Multiple Targets)</label>
+                <div class="grid-buttons">
+                    <button class="grid-btn" data-value="1">Button 1</button>
+                    <button class="grid-btn" data-value="2">Button 2</button>
+                    <button class="grid-btn" data-value="3">Button 3</button>
+                    <button class="grid-btn" data-value="4">Button 4</button>
+                    <button class="grid-btn" data-value="5">Button 5</button>
+                    <button class="grid-btn" data-value="6">Button 6</button>
+                </div>
+                <div id="gridOutput" class="output"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2>Modal Form</h2>
+            <div style="margin: 15px 0;">
+                <label for="modalName">Name</label>
+                <input type="text" id="modalName" placeholder="Enter your name">
+            </div>
+            <div style="margin: 15px 0;">
+                <label for="modalEmail">Email</label>
+                <input type="email" id="modalEmail" placeholder="Enter your email">
+            </div>
+            <div style="margin: 15px 0;">
+                <button id="modalSubmit" style="background: #28a745;">Submit</button>
+                <button id="modalClose" style="background: #dc3545;">Close</button>
+            </div>
+            <div id="modalOutput" class="output"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Simple Click
+        document.getElementById('simpleBtn').addEventListener('click', function() {
+            document.getElementById('clickOutput').innerHTML = '<span class="success">✓ Button clicked at ' + new Date().toLocaleTimeString() + '</span>';
+        });
+        
+        // Double Click
+        document.getElementById('dblClickBtn').addEventListener('dblclick', function() {
+            document.getElementById('dblClickOutput').innerHTML = '<span class="success">✓ Button double-clicked at ' + new Date().toLocaleTimeString() + '</span>';
+        });
+        
+        // Position Click
+        document.getElementById('clickArea').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            
+            // Create click marker
+            const marker = document.createElement('div');
+            marker.className = 'click-marker';
+            marker.style.left = (e.clientX - rect.left) + 'px';
+            marker.style.top = (e.clientY - rect.top) + 'px';
+            this.appendChild(marker);
+            
+            setTimeout(() => marker.remove(), 1000);
+            
+            document.getElementById('positionOutput').innerHTML = 
+                `<span class="success">✓ Clicked at position (${x}, ${y})</span>`;
+        });
+        
+        // Hover
+        document.getElementById('hoverBox').addEventListener('mouseenter', function() {
+            document.getElementById('hoverOutput').innerHTML = '<span class="success">✓ Mouse entered at ' + new Date().toLocaleTimeString() + '</span>';
+        });
+        
+        document.getElementById('hoverBox').addEventListener('mouseleave', function() {
+            document.getElementById('hoverOutput').innerHTML = '✗ Mouse left';
+        });
+        
+        // Select
+        document.getElementById('selectCountry').addEventListener('change', function() {
+            const text = this.options[this.selectedIndex].text;
+            document.getElementById('selectOutput').innerHTML = 
+                `<span class="success">✓ Selected: ${text} (${this.value})</span>`;
+        });
+        
+        // File upload
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const files = Array.from(this.files).map(f => f.name).join(', ');
+            document.getElementById('fileOutput').innerHTML = 
+                `<span class="success">✓ Files selected: ${files || 'None'}</span>`;
+        });
+        
+        // Toggle visibility
+        document.getElementById('toggleBtn').addEventListener('click', function() {
+            const el = document.getElementById('hiddenElement');
+            el.classList.toggle('visible');
+            this.textContent = el.classList.contains('visible') ? 'Hide Element' : 'Show Element';
+        });
+        
+        // Delayed button
+        document.getElementById('delayedBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = 'Waiting...';
+            setTimeout(() => {
+                document.getElementById('delayedTarget').style.display = 'inline-block';
+                this.textContent = 'Button Appeared!';
+            }, 2000);
+        });
+        
+        // Key press
+        document.getElementById('keyPressInput').addEventListener('keydown', function(e) {
+            document.getElementById('keyPressOutput').innerHTML = 
+                `<span class="success">✓ Key pressed: ${e.key} (code: ${e.code})</span>`;
+        });
+        
+        // Modal
+        document.getElementById('showModal').addEventListener('click', function() {
+            document.getElementById('modal').classList.add('show');
+        });
+        
+        document.getElementById('modalClose').addEventListener('click', function() {
+            document.getElementById('modal').classList.remove('show');
+        });
+        
+        document.getElementById('modalSubmit').addEventListener('click', function() {
+            const name = document.getElementById('modalName').value;
+            const email = document.getElementById('modalEmail').value;
+            document.getElementById('modalOutput').innerHTML = 
+                `<span class="success">✓ Submitted: ${name} (${email})</span>`;
+        });
+        
+        // Grid buttons
+        document.querySelectorAll('.grid-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('gridOutput').innerHTML = 
+                    `<span class="success">✓ Clicked button ${this.dataset.value}</span>`;
+            });
+        });
+    </script>
+</body>
+</html>
