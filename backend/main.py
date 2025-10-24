@@ -15,7 +15,6 @@ from pydantic import BaseModel
 # Initialize connection manager
 manager = ConnectionManager()
 
-# Use Uvicorn's logger for colorized output
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(lifespan=playwright_lifespan)

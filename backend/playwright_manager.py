@@ -40,9 +40,6 @@ async def playwright_lifespan(app: FastAPI):
         raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
     
     logger.info(f"Loading extension from: {EXT_DIR}")
-    
-    # Launch browser with persistent context for extensions
-    import tempfile
 
     user_data_dir = f"user-data"
     browser_context = await playwright_instance.chromium.launch_persistent_context(
@@ -51,7 +48,6 @@ async def playwright_lifespan(app: FastAPI):
         args=[
             f"--disable-extensions-except={EXT_DIR}",
             f"--load-extension={EXT_DIR}",
-            # Ensure native UI like <select> positions correctly by avoiding DPI scaling
             "--high-dpi-support=1",
             "--force-device-scale-factor=1",
         ],
