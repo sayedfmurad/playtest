@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from connection_manager import ConnectionManager
-from playwright_manager import playwright_lifespan, get_current_page, get_browser_context
+from playwright_manager import playwright_lifespan
 import json
 import asyncio
 from typing import List
