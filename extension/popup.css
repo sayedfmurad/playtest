@@ -50,8 +50,8 @@ body { width: 500px; min-height: 520px; font-family: Inter, system-ui, -apple-sy
 .btn-close { background: transparent; border: 0; color: #aab2cc; font-size: 24px; line-height: 1; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
 .btn-close:hover { color: #e6e9f5; }
 .btn-close::before { content: '×'; }
-.form-control { width: 100%; background: #0f1830; border: 1px solid #1e2c4d; color: #e6e9f5; border-radius: 8px; padding: 10px 12px; font-size: 14px; }
-.form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+.form-control { width: 100%; background: #1a2540; border: 1px solid #2a3a5f; color: #e6e9f5; border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.form-control:focus { outline: none; background: #1f2d4d; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);color: #e6e9f5; }
 .w-100 { width: 100%; }
 .mb-2 { margin-bottom: 8px; }
 .btn-primary { background: #3b82f6; color: white; border: 0; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
