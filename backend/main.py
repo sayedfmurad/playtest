@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse
 from connection_manager import ConnectionManager
 from playwright_manager import playwright_lifespan
+from utils.sanitize_name import _sanitize_name
 import json
 import asyncio
 from typing import List
@@ -22,16 +23,6 @@ app = FastAPI(lifespan=playwright_lifespan)
 # Scripts storage directory
 SCRIPTS_DIR = Path(__file__).parent / "scripts"
 SCRIPTS_DIR.mkdir(exist_ok=True)
-
-
-def _sanitize_name(name: str) -> str:
-    name = (name or "").strip()
-    # Allow letters, numbers, dashes, underscores and spaces; convert spaces to underscores
-    name = re.sub(r"[^A-Za-z0-9_\- ]+", "", name)
-    name = re.sub(r"\s+", "_", name)
-    if not name:
-        raise HTTPException(status_code=400, detail="Invalid script name")
-    return name[:128]
 
 
 class ScriptPayload(BaseModel):
