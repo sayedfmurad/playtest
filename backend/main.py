@@ -1,5 +1,4 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from connection_manager import ConnectionManager
 from playwright_manager import playwright_lifespan
@@ -19,14 +18,6 @@ logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(lifespan=playwright_lifespan)
 
-# Allow requests from the extension and any local pages
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Scripts storage directory
 SCRIPTS_DIR = Path(__file__).parent / "scripts"
