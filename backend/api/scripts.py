@@ -139,11 +139,12 @@ async def save_script(payload: ScriptPayload):
     for s in (payload.steps or []):
         if isinstance(s, dict):
             d = {}
-            # normalize target/selector
-            target = s.get("target") or {}
-            sel = s.get("selector") or (target.get("selector") if isinstance(target, dict) else None)
-            if sel:
-                d["target"] = {"selector": sel}
+            # get selector from nested target structure
+            target = s.get("target")
+            if target and isinstance(target, dict):
+                sel = target.get("selector")
+                if sel:
+                    d["target"] = {"selector": sel}
             # copy known fields
             for k in [
                 "action", "value", "options", "optionsText", "storeAs",
