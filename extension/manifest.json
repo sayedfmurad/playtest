@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Quick WebSocket to Local API",
+  "name": "Playtest",
   "version": "0.0.2",
-  "description": "Connects to a local Python API via WebSocket for real-time communication.",
+  "description": "A test automation tool that lets users create and run tests in the extension UI, connecting to a backend Playwright instance for browser automation.",
   "action": {
-    "default_title": "Quick WebSocket to Local API"
+    "default_title": "Playtest"
   },
   "background": { "service_worker": "background.js" },
   "permissions": ["tabs", "storage", "windows"],
