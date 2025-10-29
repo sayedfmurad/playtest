@@ -3,13 +3,8 @@ if (!window.extensionWS) {
   const ws = new ExtensionWebSocket();
   window.extensionWS = ws;
 
-  // Keep-alive ping every 30 seconds
   window._extensionWSKeepAlive = setInterval(() => {
-    try {
-      window.extensionWS?.sendPing().catch(() => {});
-    } catch (e) {
-      console.warn('[EXT] Ping failed:', e);
-    }
+    try { window.extensionWS?.sendPing().catch(() => {}); } catch {}
   }, 30000);
 
   window.addEventListener('beforeunload', () => {
@@ -18,14 +13,9 @@ if (!window.extensionWS) {
   });
 }
 
-// Simple variables store and utilities for scripting
+// Variables store and step execution
 (function(){
   const vars = (window._ptVars = window._ptVars || {});
-  const stepStates = (window._ptStepStates = window._ptStepStates || {}); // uiId -> {status, error}
-
-  function saveStates() {
-    try { chrome.storage?.local?.set({ playtest_step_states: stepStates }); } catch {}
-  }
 
   function interpolate(value) {
     if (typeof value === 'string') {
@@ -44,203 +34,92 @@ if (!window.extensionWS) {
   }
 
   async function execOne(step) {
-    const payload = {};
-    if (step.type && !step.action) {
-      // Allow {type:'ping'} style
-      Object.assign(payload, step);
-    } else {
-      payload.action = step.action;
-      if (step.target) payload.target = interpolate(step.target);
-      if (step.value !== undefined) payload.value = interpolate(step.value);
-      if (step.options) payload.options = interpolate(step.options);
-    }
+    const payload = step.type && !step.action ? step : {
+      action: step.action,
+      ...(step.target && { target: interpolate(step.target) }),
+      ...(step.value !== undefined && { value: interpolate(step.value) }),
+      ...(step.options && { options: interpolate(step.options) })
+    };
     const res = await window.extensionWS.sendCommand(payload, { timeoutMs: step.timeoutMs });
-    // Store vars on success
-    if (res && res.status === 'ok' && step.storeAs) {
+    if (res?.status === 'ok' && step.storeAs) {
       const det = res.details || {};
-      const val = det.value !== undefined ? det.value : det.url !== undefined ? det.url : det;
-      vars[step.storeAs] = val;
+      vars[step.storeAs] = det.value !== undefined ? det.value : det.url !== undefined ? det.url : det;
     }
     return res;
   }
 
-  async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  async function runSteps(steps, opts = {}) {
-    const maxIterations = typeof opts.maxIterations === 'number' ? opts.maxIterations : 10000;
+  async function runSteps(steps) {
     const results = [];
-    let i = 0, iterations = 0;
-    while (i < steps.length) {
-      if (iterations++ > maxIterations) throw new Error('Max iterations exceeded');
+    for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
-
-      let attempts = 0;
-      const retries = Number(step.retries || 0);
-      const retryDelay = Number(step.retryDelayMs || 500);
-      let lastRes = null;
-
-      while (true) {
-        try {
-          lastRes = await execOne(step);
-          results.push({ index: i, step, response: lastRes, uiId: step.uiId });
-          // Broadcast per-step update (optional)
-          try { chrome.runtime.sendMessage({ type: 'step_result', index: i, response: lastRes, uiId: step.uiId }); } catch {}
-          // persist state
-          if (step.uiId) {
-            stepStates[step.uiId] = { status: 'ok', error: '' };
-            saveStates();
-          }
-          break;
-        } catch (err) {
-          attempts++;
-          results.push({ index: i, step, error: err, uiId: step.uiId });
-          try { chrome.runtime.sendMessage({ type: 'step_result', index: i, error: err, uiId: step.uiId }); } catch {}
-          if (step.uiId) {
-            const msg = (err && (err.message || String(err))) || 'Unknown error';
-            stepStates[step.uiId] = { status: 'error', error: msg };
-            saveStates();
-          }
-          if (attempts <= retries) {
-            await sleep(retryDelay);
-            continue;
-          } else {
-            lastRes = err;
-            break;
-          }
-        }
-      }
-
-      // Control flow: nextOnOk / nextOnError, else sequential
-      if (lastRes && lastRes.status === 'ok' && step.nextOnOk !== undefined) {
-        i = step.nextOnOk;
-      } else if (lastRes && lastRes.status === 'error' && step.nextOnError !== undefined) {
-        i = step.nextOnError;
-      } else {
-        i++;
+      try {
+        const lastRes = await execOne(step);
+        results.push({ index: i, step, response: lastRes, uiId: step.uiId });
+        try { chrome.runtime.sendMessage({ type: 'step_result', index: i, response: lastRes, uiId: step.uiId }); } catch {}
+      } catch (err) {
+        results.push({ index: i, step, error: err, uiId: step.uiId });
+        try { chrome.runtime.sendMessage({ type: 'step_result', index: i, error: err, uiId: step.uiId }); } catch {}
       }
     }
-    return { ok: true, results, vars };
+    return { results };
   }
 
-  // Expose API on window and via runtime messaging
-  window.playtest = {
-    vars,
-    interpolate,
-    runSteps,
-    send: (payload, opts) => window.extensionWS.sendCommand(payload, opts),
-  };
 
-  try {
-    chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-      if (!msg || typeof msg !== 'object') return;
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (!msg || typeof msg !== 'object') return;
 
-      if (msg.type === 'popup_ping') {
-        try {
-          window.extensionWS?.sendPing();
-          sendResponse({ ok: true });
-        } catch (e) {
-          sendResponse({ ok: false, error: String(e) });
-        }
-        return true;
-      }
+    if (msg.type === 'popup_ping') {
+      try { window.extensionWS?.sendPing(); sendResponse({ ok: true }); } catch (e) { sendResponse({ ok: false, error: String(e) }); }
+      return true;
+    }
 
-      if (msg.type === 'get_status') {
-        const s = window.extensionWS?.ws?.readyState;
-        const status = s === 1 ? 'open' : s === 0 ? 'connecting' : 'closed';
-        sendResponse({ status });
-        return true;
-      }
+    if (msg.type === 'get_status') {
+      const s = window.extensionWS?.ws?.readyState;
+      sendResponse({ status: s === 1 ? 'open' : s === 0 ? 'connecting' : 'closed' });
+      return true;
+    }
 
-      if (msg.type === 'run_steps' && Array.isArray(msg.steps)) {
-        runSteps(msg.steps, msg.options || {})
-          .then((r) => sendResponse(r))
-          .catch((e) => sendResponse({ ok: false, error: String(e) }));
-        return true; // async
-      }
+    if (msg.type === 'run_steps' && Array.isArray(msg.steps)) {
+      runSteps(msg.steps).then(r => sendResponse(r)).catch(e => sendResponse({ ok: false, error: String(e) }));
+      return true;
+    }
 
-      if (msg.type === 'send_command' && msg.payload) {
-        window.extensionWS
-          .sendCommand(msg.payload, msg.options)
-          .then((r) => sendResponse({ ok: true, response: r }))
-          .catch((e) => sendResponse({ ok: false, error: e }));
-        return true; // async
-      }
-
-      if (msg.type === 'get_step_states') {
-        sendResponse({ ok: true, states: stepStates });
-        return true;
-      }
-    });
-  } catch (e) {
-    console.warn('[EXT] runtime messaging unavailable:', e);
-  }
+    if (msg.type === 'send_command' && msg.payload) {
+      window.extensionWS.sendCommand(msg.payload, msg.options)
+        .then(r => sendResponse({ ok: true, response: r }))
+        .catch(e => sendResponse({ ok: false, error: e }));
+      return true;
+    }
+  });
 })();
 
-// Expose a simple element picker for building selectors
+// Element and position picker
 (function(){
-  if (window._ptPickerInit) return; // singleton
+  if (window._ptPickerInit) return;
   window._ptPickerInit = true;
 
-  let picking = false;
-  let pickingPosition = false;
-  let hoverEl = null;
-  let styleEl = null;
-  let resolvePick = null;
-  let positionOverlay = null;
+  let picking = false, pickingPosition = false, hoverEl = null, styleEl = null, resolvePick = null, positionOverlay = null;
 
   function ensureStyle() {
     if (styleEl) return;
     styleEl = document.createElement('style');
     styleEl.textContent = `
-      .__pt_pick_highlight__ { 
-        outline: 2px solid #3b82f6 !important; 
-        cursor: crosshair !important; 
-      }
-      body.__pt_picking__ * { 
-        cursor: crosshair !important; 
-      }
-      body.__pt_picking__ select,
-      body.__pt_picking__ option {
-        cursor: pointer !important;
-      }
+      .__pt_pick_highlight__ { outline: 2px solid #3b82f6 !important; cursor: crosshair !important; }
+      body.__pt_picking__ * { cursor: crosshair !important; }
+      body.__pt_picking__ select, body.__pt_picking__ option { cursor: pointer !important; }
       .__pt_position_overlay__ {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(59, 130, 246, 0.1);
-        cursor: crosshair;
-        z-index: 2147483647;
-        pointer-events: auto;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(59, 130, 246, 0.1); cursor: crosshair; z-index: 2147483647; pointer-events: auto;
       }
       .__pt_position_indicator__ {
-        position: fixed;
-        width: 40px;
-        height: 40px;
-        border: 2px solid #3b82f6;
-        border-radius: 50%;
-        background: rgba(59, 130, 246, 0.2);
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        z-index: 2147483648;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        color: #1e40af;
-        font-weight: bold;
+        position: fixed; width: 40px; height: 40px; border: 2px solid #3b82f6; border-radius: 50%;
+        background: rgba(59, 130, 246, 0.2); pointer-events: none; transform: translate(-50%, -50%);
+        z-index: 2147483648; display: flex; align-items: center; justify-content: center;
+        font-size: 10px; color: #1e40af; font-weight: bold;
       }
       .__pt_position_coords__ {
-        position: fixed;
-        background: #1e40af;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        pointer-events: none;
-        z-index: 2147483649;
-        font-family: monospace;
+        position: fixed; background: #1e40af; color: white; padding: 4px 8px; border-radius: 4px;
+        font-size: 12px; pointer-events: none; z-index: 2147483649; font-family: monospace;
       }
     `;
     document.documentElement.appendChild(styleEl);
@@ -248,7 +127,6 @@ if (!window.extensionWS) {
 
   function bestSelector(el) {
     if (!el || el.nodeType !== 1) return '';
-    // Prefer robust attributes
     const attrs = ['data-testid', 'data-test', 'data-qa', 'data-cy', 'aria-label'];
     for (const a of attrs) {
       const v = el.getAttribute(a);
@@ -257,140 +135,85 @@ if (!window.extensionWS) {
         if (document.querySelectorAll(sel).length === 1) return sel;
       }
     }
-    // Prefer id if unique
-    const id = el.id;
-    if (id) {
-      const sel = `#${CSS.escape(id)}`;
+    if (el.id) {
+      const sel = `#${CSS.escape(el.id)}`;
       if (document.querySelectorAll(sel).length === 1) return sel;
     }
-    // Build a class-based selector limited to first two classes (excluding picker highlight)
-    const classes = Array.from(el.classList || [])
-      .filter(c => c !== '__pt_pick_highlight__')
-      .slice(0, 2)
-      .map(c => `.${CSS.escape(c)}`)
-      .join('');
+    const classes = Array.from(el.classList || []).filter(c => c !== '__pt_pick_highlight__').slice(0, 2).map(c => `.${CSS.escape(c)}`).join('');
     const tag = el.tagName.toLowerCase();
     let candidate = `${tag}${classes}`;
     if (candidate && document.querySelectorAll(candidate).length === 1) return candidate;
-
-    // Walk up to create a short path
     const parts = [];
     let node = el;
-    let depth = 0;
-    while (node && node.nodeType === 1 && depth < 4) {
+    for (let depth = 0; depth < 4 && node && node.nodeType === 1; depth++) {
       let part = node.tagName.toLowerCase();
       if (node.id) { part += `#${CSS.escape(node.id)}`; parts.unshift(part); break; }
-      const cls = Array.from(node.classList || [])
-        .filter(c => c !== '__pt_pick_highlight__')
-        .slice(0, 1)
-        .map(c => `.${CSS.escape(c)}`)
-        .join('');
-      part += cls;
-      parts.unshift(part);
+      const cls = Array.from(node.classList || []).filter(c => c !== '__pt_pick_highlight__').slice(0, 1).map(c => `.${CSS.escape(c)}`).join('');
+      parts.unshift(part + cls);
       node = node.parentElement;
-      depth++;
     }
-    candidate = parts.join(' > ');
-    return candidate || tag;
+    return parts.join(' > ') || tag;
   }
 
-  function clearHighlight() {
+  function stopPicker(send, result) {
+    picking = pickingPosition = false;
+    document.body.classList.remove('__pt_picking__');
     if (hoverEl) hoverEl.classList.remove('__pt_pick_highlight__');
     hoverEl = null;
+    if (positionOverlay) { positionOverlay.remove(); positionOverlay = null; }
+    window.removeEventListener('mousemove', onMove, true);
+    window.removeEventListener('click', onClick, true);
+    window.removeEventListener('keydown', onKey, true);
+    if (styleEl) { try { styleEl.remove(); } catch {} styleEl = null; }
+    const r = result || { ok: false, error: 'cancelled' };
+    try { send(r); } catch {}
+    if (resolvePick) { try { resolvePick(r); } catch {} resolvePick = null; }
   }
 
   function onMove(e) {
     if (!picking) return;
     const el = e.target;
     if (hoverEl !== el) {
-      clearHighlight();
+      if (hoverEl) hoverEl.classList.remove('__pt_pick_highlight__');
       hoverEl = el;
       if (hoverEl) hoverEl.classList.add('__pt_pick_highlight__');
     }
-  }
-
-  function stopPicker(send, result) {
-    picking = false;
-    pickingPosition = false;
-    document.body.classList.remove('__pt_picking__');
-    clearHighlight();
-    if (positionOverlay) {
-      positionOverlay.remove();
-      positionOverlay = null;
-    }
-    window.removeEventListener('mousemove', onMove, true);
-    window.removeEventListener('mousemove', onPositionMove, true);
-    window.removeEventListener('click', onClick, true);
-    window.removeEventListener('click', onPositionClick, true);
-    window.removeEventListener('keydown', onKey, true);
-    try { if (styleEl) styleEl.remove(); } catch {}
-    styleEl = null;
-    const r = result || { ok: false, error: 'cancelled' };
-    try { send(r); } catch {}
-    if (resolvePick) { try { resolvePick(r); } catch {} resolvePick = null; }
   }
 
   function onClick(e) {
     if (!picking) return;
     e.preventDefault();
     e.stopPropagation();
-    const el = e.target;
-    const selector = bestSelector(el);
-    const result = { ok: true, selector };
-    stopPicker(() => {}, result);
+    stopPicker(() => {}, { ok: true, selector: bestSelector(e.target) });
   }
 
   function onKey(e) {
-    if (!picking) return;
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && (picking || pickingPosition)) {
       e.preventDefault();
       e.stopPropagation();
       stopPicker(() => {}, { ok: false, error: 'cancelled' });
     }
   }
 
-  function startPicker(sendResponse) {
-    if (picking || pickingPosition) return; // already
-    ensureStyle();
-    picking = true;
-    pickingPosition = false;
-    document.body.classList.add('__pt_picking__');
-    window.addEventListener('mousemove', onMove, true);
-    window.addEventListener('click', onClick, true);
-    window.addEventListener('keydown', onKey, true);
-    // Store resolver so we can reply later
-    resolvePick = (res) => sendResponse(res);
-  }
-
   function onPositionMove(e) {
     if (!pickingPosition || !positionOverlay) return;
-    
-    // Get or create indicator elements
     let indicator = positionOverlay.querySelector('.__pt_position_indicator__');
     let coords = positionOverlay.querySelector('.__pt_position_coords__');
-    
     if (!indicator) {
       indicator = document.createElement('div');
       indicator.className = '__pt_position_indicator__';
       indicator.textContent = '+';
       positionOverlay.appendChild(indicator);
     }
-    
     if (!coords) {
       coords = document.createElement('div');
       coords.className = '__pt_position_coords__';
       positionOverlay.appendChild(coords);
     }
-    
-    // Calculate absolute page coordinates including scroll offset
     const pageX = e.clientX + window.scrollX;
     const pageY = e.clientY + window.scrollY;
-    
-    // Update positions (indicator uses viewport coordinates since it's fixed position)
     indicator.style.left = e.clientX + 'px';
     indicator.style.top = e.clientY + 'px';
-    
-    // Display absolute page coordinates
     coords.textContent = `X: ${pageX}, Y: ${pageY}`;
     coords.style.left = (e.clientX + 25) + 'px';
     coords.style.top = (e.clientY - 25) + 'px';
@@ -400,51 +223,50 @@ if (!window.extensionWS) {
     if (!pickingPosition) return;
     e.preventDefault();
     e.stopPropagation();
-    
-    // Calculate absolute page coordinates including scroll offset
-    const position = { 
-      x: e.clientX + window.scrollX, 
-      y: e.clientY + window.scrollY 
-    };
-    const result = { ok: true, position };
-    stopPicker(() => {}, result);
+    stopPicker(() => {}, { ok: true, position: { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY } });
   }
 
-  function startPositionPicker(sendResponse) {
-    if (picking || pickingPosition) return; // already
+  function startPicker(sendResponse) {
+    if (picking || pickingPosition) return;
     ensureStyle();
-    pickingPosition = true;
-    picking = false;
-    
-    // Create overlay
-    positionOverlay = document.createElement('div');
-    positionOverlay.className = '__pt_position_overlay__';
-    document.body.appendChild(positionOverlay);
-    
-    positionOverlay.addEventListener('mousemove', onPositionMove, true);
-    positionOverlay.addEventListener('click', onPositionClick, true);
+    picking = true;
+    pickingPosition = false;
+    document.body.classList.add('__pt_picking__');
+    window.addEventListener('mousemove', onMove, true);
+    window.addEventListener('click', onClick, true);
     window.addEventListener('keydown', onKey, true);
-    
-    // Store resolver so we can reply later
     resolvePick = (res) => sendResponse(res);
   }
 
-  // Extend runtime messaging
-  try {
-    chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-      if (!msg || typeof msg !== 'object') return;
-      if (msg.type === 'start_picker') {
-        startPicker(sendResponse);
-        return true; // async
-      }
-      if (msg.type === 'start_position_picker') {
-        startPositionPicker(sendResponse);
-        return true; // async
-      }
-      if (msg.type === 'stop_picker') {
-        stopPicker(sendResponse, { ok: false, error: 'stopped' });
-        return true;
-      }
-    });
-  } catch {}
+  function startPositionPicker(sendResponse) {
+    if (picking || pickingPosition) return;
+    ensureStyle();
+    pickingPosition = true;
+    picking = false;
+    positionOverlay = document.createElement('div');
+    positionOverlay.className = '__pt_position_overlay__';
+    document.body.appendChild(positionOverlay);
+    positionOverlay.addEventListener('mousemove', onPositionMove, true);
+    positionOverlay.addEventListener('click', onPositionClick, true);
+    window.addEventListener('keydown', onKey, true);
+    resolvePick = (res) => sendResponse(res);
+  }
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.type === 'start_picker') {
+      startPicker(sendResponse);
+      return true;
+    }
+    if (msg.type === 'start_position_picker') {
+      startPositionPicker(sendResponse);
+      return true;
+    }
+    if (msg.type === 'stop_picker') {
+      stopPicker(sendResponse, { ok: false, error: 'stopped' });
+      return true;
+    }
+  });
 })();
+
+
