@@ -65,8 +65,7 @@ def _generate_playwright_code(name: str, steps: list) -> str:
             lines.append(f"{indent}await page.locator('{selector}').press('{value}');")
         elif action == "selectOption":
             lines.append(f"{indent}await page.locator('{selector}').selectOption('{value}');")
-        elif action == "uploadFile":
-            lines.append(f"{indent}await page.locator('{selector}').setInputFiles('{value}');")
+        # uploadFile action removed
         elif action == "waitForVisible":
             lines.append(f"{indent}await page.locator('{selector}').waitFor({{ state: 'visible' }});")
         elif action == "waitForHidden":

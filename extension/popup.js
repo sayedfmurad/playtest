@@ -90,7 +90,6 @@
     { value: 'type', label: 'Type (raw)', needsSelector: true, needsValue: true, valuePlaceholder: 'text' },
     { value: 'press', label: 'Press key', needsSelector: true, needsValue: true, valuePlaceholder: 'Enter' },
     { value: 'selectOption', label: 'Select option', needsSelector: true, needsValue: true, valuePlaceholder: 'value' },
-    { value: 'uploadFile', label: 'Upload file', needsSelector: true, needsValue: true, valuePlaceholder: '/absolute/path' },
     { value: 'waitForVisible', label: 'Wait visible', needsSelector: true },
     { value: 'waitForHidden', label: 'Wait hidden', needsSelector: true },
     { value: 'waitTimeout', label: 'Wait timeout (ms)', needsSelector: false, needsValue: true, valuePlaceholder: '1000' },

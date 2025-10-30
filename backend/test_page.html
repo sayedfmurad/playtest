@@ -308,11 +308,7 @@
                 <textarea id="textArea" rows="4" placeholder="Type multiple lines here..."></textarea>
             </div>
             
-            <div class="test-item">
-                <label for="fileInput">File Upload</label>
-                <input type="file" id="fileInput" multiple>
-                <div id="fileOutput" class="output"></div>
-            </div>
+            
         </div>
         
         <!-- Select and Options -->
@@ -544,12 +540,7 @@
                 `<span class="success">✓ Selected: ${text} (${this.value})</span>`;
         });
         
-        // File upload
-        document.getElementById('fileInput').addEventListener('change', function() {
-            const files = Array.from(this.files).map(f => f.name).join(', ');
-            document.getElementById('fileOutput').innerHTML = 
-                `<span class="success">✓ Files selected: ${files || 'None'}</span>`;
-        });
+        
         
         // Toggle visibility
         document.getElementById('toggleBtn').addEventListener('click', function() {

@@ -279,16 +279,7 @@ async def _act_selectOption(page, message: Dict[str, Any]) -> Dict[str, Any]:
     return {"selected": selected}
 
 
-async def _act_uploadFile(page, message: Dict[str, Any]) -> Dict[str, Any]:
-    target = message.get("target") or {}
-    selector = target.get("selector") if isinstance(target, dict) else target
-    files = message.get("value") or (message.get("options") or {}).get("files")
-    if not selector:
-        raise ValueError("uploadFile: 'target.selector' is required")
-    if not files:
-        raise ValueError("uploadFile: 'value' or options.files is required (string | list)")
-    await page.set_input_files(selector, files)
-    return {"uploaded": files if isinstance(files, list) else [files]}
+## Removed uploadFile action
 
 
 async def _expect_exists(page, selector: str, timeout: int, state: str = "attached"):
@@ -501,7 +492,6 @@ ACTION_HANDLERS: Dict[str, Callable[[Any, Dict[str, Any]], Awaitable[Dict[str, A
     "press": _act_press,
     "hover": _act_hover,
     "selectOption": _act_selectOption,
-    "uploadFile": _act_uploadFile,
     # Assertions
     "expectExists": _act_expectExists,
     "expectNotExists": _act_expectNotExists,
