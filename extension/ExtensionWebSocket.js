@@ -94,22 +94,26 @@ class ExtensionWebSocket {
     }
   }
 
-  sendCommand(payload, { timeoutMs } = {}) {
-    const id = payload.id || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  sendCommand(payload, options = {}) {
+    const id = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+  
     const message = { id, ...payload };
-    const tmo = typeof timeoutMs === 'number' ? timeoutMs : (payload.options?.timeout ?? this.defaultTimeout);
-
+  
+    const timeoutMs = options.timeoutMs || this.defaultTimeout;
+  
     return new Promise((resolve, reject) => {
-      const sent = this._send(message);
-      if (!sent) {
-        reject({ type: 'error', message: 'WebSocket not connected', id });
+  
+      if (!this._send(message)) {
+        reject({ error: 'WebSocket not connected', id });
         return;
       }
-      const timeoutId = setTimeout(() => {
+  
+      const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject({ type: 'result', id, status: 'error', error: { name: 'TimeoutError', message: `Request timed out after ${tmo}ms` } });
-      }, tmo);
-      this.pending.set(id, { resolve, reject, timeoutId });
+        reject({ error: 'Timeout', message: `No reply after ${timeoutMs}ms`, id });
+      }, timeoutMs);
+  
+      this.pending.set(id, { resolve, reject, timer });
     });
   }
 
