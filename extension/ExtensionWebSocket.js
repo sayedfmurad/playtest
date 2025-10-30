@@ -5,15 +5,11 @@ class ExtensionWebSocket {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // Start with 1 second
     this.pending = new Map(); // id -> {resolve, reject, timeoutId}
-    this._idCounter = 0;
     this.defaultTimeout = 30000; // 30s per command
     this.connect();
   }
 
-  _nextId() {
-    this._idCounter = (this._idCounter + 1) % 1e9;
-    return `${Date.now()}-${this._idCounter}`;
-  }
+  
 
   connect() {
     try {
@@ -99,7 +95,7 @@ class ExtensionWebSocket {
   }
 
   sendCommand(payload, { timeoutMs } = {}) {
-    const id = payload.id || this._nextId();
+    const id = payload.id || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const message = { id, ...payload };
     const tmo = typeof timeoutMs === 'number' ? timeoutMs : (payload.options?.timeout ?? this.defaultTimeout);
 
