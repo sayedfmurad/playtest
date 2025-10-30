@@ -4,7 +4,6 @@ class ExtensionWebSocket {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // Start with 1 second
-    this.subscribers = new Set();
     this.pending = new Map(); // id -> {resolve, reject, timeoutId}
     this._idCounter = 0;
     this.defaultTimeout = 30000; // 30s per command
@@ -47,10 +46,7 @@ class ExtensionWebSocket {
           return;
         }
 
-        // Notify subscribers for any other message, including 'processing'
-        this.subscribers.forEach((fn) => {
-          try { fn(data); } catch {}
-        });
+        // No request id to resolve; currently no-op
       };
 
       this.ws.onclose = (event) => {
@@ -90,8 +86,7 @@ class ExtensionWebSocket {
     }
   }
 
-  subscribe(fn) { this.subscribers.add(fn); }
-  unsubscribe(fn) { try { this.subscribers.delete(fn); } catch {} }
+  // Subscribers removed for simplicity; add back if streaming events are needed
 
   _send(message) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
