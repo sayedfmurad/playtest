@@ -106,7 +106,7 @@
 
   function blankStep(index = 0) {
     return {
-      id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+      id: `${Date.now()}`,
       name: `Task ${index + 1}`,
       action: 'click',
       selector: '',
