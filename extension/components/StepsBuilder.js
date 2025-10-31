@@ -194,25 +194,6 @@
       }
     }
 
-    async function onLoad(name) {
-      if (!name) return;
-      try {
-        const data = await apiLoad(name);
-        const loaded = (data.steps || []).map((s, idx) => ({
-          id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
-          name: s.name || `Task ${idx + 1}`,
-          action: s.action || 'click',
-          selector: (s.target && s.target.selector) || s.selector || '',
-          value: s.value || '',
-          optionsText: s.options ? JSON.stringify(s.options) : (s.optionsText || ''),
-          storeAs: s.storeAs || '',
-          status: 'idle', error: '', enabled: s.enabled !== false
-        }));
-        setSteps(loaded.length ? loaded : [blankStep(0)]);
-      } catch (e) {
-        alert('Load failed: ' + String(e));
-      }
-    }
 
     async function loadScript(name) {
       try {
