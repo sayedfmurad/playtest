@@ -50,10 +50,32 @@ if (!window.extensionWS) {
       try {
         const lastRes = await execOne(step);
         results.push({ index: i, step, response: lastRes, uiId: step.uiId });
-        try { chrome.runtime.sendMessage({ type: 'step_result', index: i, response: lastRes, uiId: step.uiId }); } catch {}
+        // Standardized message format: always include status and error
+        const status = lastRes?.status === 'ok' ? 'ok' : 'error';
+        const errorMsg = lastRes?.status !== 'ok' ? 
+          (lastRes?.error?.message || lastRes?.error || String(lastRes?.error || 'Unknown error')) : '';
+        try { 
+          chrome.runtime.sendMessage({ 
+            type: 'step_result', 
+            index: i, 
+            status,
+            error: errorMsg,
+            uiId: step.uiId 
+          }); 
+        } catch {}
       } catch (err) {
         results.push({ index: i, step, error: err, uiId: step.uiId });
-        try { chrome.runtime.sendMessage({ type: 'step_result', index: i, error: err, uiId: step.uiId }); } catch {}
+        // Standardized message format: always include status and error
+        const errorMsg = err?.message || String(err || 'Unknown error');
+        try { 
+          chrome.runtime.sendMessage({ 
+            type: 'step_result', 
+            index: i, 
+            status: 'error',
+            error: errorMsg,
+            uiId: step.uiId 
+          }); 
+        } catch {}
       }
     }
     return { results };

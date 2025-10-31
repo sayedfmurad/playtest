@@ -29,8 +29,8 @@
         if (!msg || msg.type !== 'step_result') return;
         setSteps((arr) => arr.map(s => (s.id === msg.uiId ? {
           ...s,
-          status: msg.response && msg.response.status === 'ok' ? 'ok' : (msg.error || (msg.response && msg.response.error) ? 'error' : s.status),
-          error: (msg.error && (msg.error.message || String(msg.error))) || (msg.response && msg.response.error && msg.response.error.message) || ''
+          status: msg.status || s.status,
+          error: msg.error || ''
         } : s)));
       }
       try { chrome.runtime.onMessage.addListener(onMsg); } catch {}
