@@ -14,12 +14,8 @@
     const [currentScriptName, setCurrentScriptName] = useState(null);
     const [status, setStatus] = useState('connecting');
 
-    // Persist to storage
-    useEffect(() => {
-      try { chrome.storage?.local?.set({ playtest_steps: steps, playtest_stopOnError: stopOnError }); } catch {}
-    }, [steps, stopOnError]);
 
-    // Check status on mount
+
     useEffect(() => {
       sendToTab({ type: 'get_status' }).then((res) => {
         if (res && res.status) setStatus(res.status);
