@@ -1,7 +1,7 @@
 (function(){
   const React = window.React;
 
-  function StepsBuilder({ onScriptNameChange }){
+  function StepsBuilder({ onStatusChange }){
     const { useState, useEffect } = React;
     const [steps, setSteps] = useState([blankStep(0)]);
     const [runningAll, setRunningAll] = useState(false);
@@ -12,16 +12,20 @@
     const [saveName, setSaveName] = useState('');
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [currentScriptName, setCurrentScriptName] = useState(null);
+    const [status, setStatus] = useState('connecting');
 
     // Persist to storage
     useEffect(() => {
       try { chrome.storage?.local?.set({ playtest_steps: steps, playtest_stopOnError: stopOnError }); } catch {}
     }, [steps, stopOnError]);
 
-    // Notify parent of script name changes
+    // Check status on mount
     useEffect(() => {
-      if (onScriptNameChange) onScriptNameChange(currentScriptName);
-    }, [currentScriptName, onScriptNameChange]);
+      sendToTab({ type: 'get_status' }).then((res) => {
+        if (res && res.status) setStatus(res.status);
+        else setStatus('unknown');
+      });
+    }, []);
 
     // Restore on mount and fetch scripts list
     useEffect(() => {
@@ -250,6 +254,13 @@
       setSteps([blankStep(0)]);
       setCurrentScriptName(null);
     }
+
+    // Expose status to parent component
+    useEffect(() => {
+      if (onStatusChange) {
+        onStatusChange({ status, scriptName: currentScriptName });
+      }
+    }, [status, currentScriptName, onStatusChange]);
 
     return React.createElement('div', { className: 'grid gap-3' },
       React.createElement('div', { className: 'flex items-center gap-2 flex-wrap p-3 bg-slate-900 border-b border-slate-700' },

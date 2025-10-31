@@ -540,11 +540,6 @@ async def process_message(data: str, manager: ConnectionManager, websocket: WebS
             }), websocket)
             return
 
-        # Special ping handler for keepalive
-        if message.get("type") == "ping":
-            await manager.send_personal_message(json.dumps(_build_ok(message.get("id"), {"status": "pong"})), websocket)
-            return
-
         action = message.get("action")
         handler = ACTION_HANDLERS.get(action)
         if not handler:

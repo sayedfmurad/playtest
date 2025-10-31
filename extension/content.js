@@ -3,12 +3,7 @@ if (!window.extensionWS) {
   const ws = new ExtensionWebSocket();
   window.extensionWS = ws;
 
-  window._extensionWSKeepAlive = setInterval(() => {
-    try { window.extensionWS?.sendPing().catch(() => {}); } catch {}
-  }, 30000);
-
   window.addEventListener('beforeunload', () => {
-    try { clearInterval(window._extensionWSKeepAlive); } catch {}
     try { window.extensionWS?.close(); } catch {}
   });
 }
@@ -67,11 +62,6 @@ if (!window.extensionWS) {
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || typeof msg !== 'object') return;
-
-    if (msg.type === 'popup_ping') {
-      try { window.extensionWS?.sendPing(); sendResponse({ ok: true }); } catch (e) { sendResponse({ ok: false, error: String(e) }); }
-      return true;
-    }
 
     if (msg.type === 'get_status') {
       const s = window.extensionWS?.ws?.readyState;

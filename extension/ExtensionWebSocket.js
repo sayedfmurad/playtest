@@ -117,10 +117,6 @@ class ExtensionWebSocket {
     });
   }
 
-  sendPing() {
-    return this.sendCommand({ type: 'ping' }, { timeoutMs: 5000 });
-  }
-
   close() {
     if (this.ws) {
       try { this.ws.close(); } catch {}
