@@ -21,20 +21,9 @@
         if (res && res.status) setStatus(res.status);
         else setStatus('unknown');
       });
-    }, []);
-
-    // Restore on mount and fetch scripts list
-    useEffect(() => {
-      try {
-        chrome.storage?.local?.get(['playtest_steps', 'playtest_stopOnError'], (res) => {
-          if (res && Array.isArray(res.playtest_steps) && res.playtest_steps.length) setSteps(res.playtest_steps);
-          if (typeof res.playtest_stopOnError === 'boolean') setStopOnError(res.playtest_stopOnError);
-        });
-      } catch {}
       apiList().then(d => setScripts(d.items || [])).catch(() => setScripts([]));
     }, []);
-
-    // Live update from content when steps run while popup closed
+    
     useEffect(() => {
       function onMsg(msg) {
         if (!msg || msg.type !== 'step_result') return;
