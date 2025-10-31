@@ -53,12 +53,12 @@ async def playwright_lifespan(app: FastAPI):
         ],
     )
     
-    # Reuse the existing page (tab) to avoid opening a new one
+    # Reuse the existing page to avoid opening a new one
     pages = browser_context.pages
     if pages and len(pages) > 0:
         current_page = pages[0]
     else:
-        # If no page exists yet, wait for the first one instead of creating a new tab
+        # If no page exists yet, wait for the first one
         current_page = await browser_context.wait_for_event("page")
 
     # Normalize viewport to reduce OS/zoom related UI glitches
