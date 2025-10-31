@@ -146,7 +146,7 @@ async def save_script(payload: ScriptPayload):
                     d["target"] = {"selector": sel}
             # copy known fields
             for k in [
-                "action", "value", "options", "optionsText", "storeAs",
+                "action", "name", "value", "options", "optionsText", "storeAs",
                 "enabled", "retries", "retryDelayMs", "nextOnOk", "nextOnError"
             ]:
                 if k in s and s[k] is not None:
