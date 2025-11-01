@@ -135,15 +135,16 @@
 
     async function onSave() {
       if (currentScriptName) {
-        saveCurrent();
+        saveScript();
       } else {
         setShowSaveModal(true);
       }
     }
 
-    async function confirmSave() {
-      const name = saveName.trim();
-      if (!name) return;
+    async function saveScript(name = null) {
+      const scriptName = name ? name.trim() : currentScriptName;
+      if (!scriptName) return;
+      
       setSaving(true);
       try {
         const out = steps.map(s => {
@@ -156,41 +157,22 @@
           if (s.enabled === false) d.enabled = false;
           return d;
         });
-        await apiSave(name, out);
+        await apiSave(scriptName, out);
         const lst = await apiList();
         setScripts(lst.items || []);
-        setCurrentScriptName(name);
+        
+        if (name) {
+          setCurrentScriptName(scriptName);
+        }
       } catch (e) {
         alert('Save failed: ' + String(e));
       } finally {
         setSaving(false);
-        setShowSaveModal(false);
-        setSaveName('');
-      }
-    }
-
-    async function saveCurrent() {
-      if (!currentScriptName) return;
-      setSaving(true);
-      try {
-        const out = steps.map(s => {
-          const d = { action: s.action };
-          if (s.name) d.name = s.name;
-          if (s.selector) d.target = { selector: s.selector };
-          if (s.value !== '' && s.value !== undefined) d.value = s.value;
-          if (s.optionsText) { try { d.options = JSON.parse(s.optionsText); } catch { d.optionsText = s.optionsText; } }
-          if (s.storeAs) d.storeAs = s.storeAs;
-          if (s.enabled === false) d.enabled = false;
-          return d;
-        });
-        await apiSave(currentScriptName, out);
-        const lst = await apiList();
-        setScripts(lst.items || []);
-
-      } catch (e) {
-        alert('Save failed: ' + String(e));
-      } finally {
-        setSaving(false);
+        // If saving from modal, close it and clear saveName
+        if (name) {
+          setShowSaveModal(false);
+          setSaveName('');
+        }
       }
     }
 
@@ -199,7 +181,7 @@
       try {
         const data = await apiLoad(name);
         const loaded = (data.steps || []).map((s, idx) => ({
-          id: `${Date.now()}-${Math.floor(Math.random()*1e6)}`,
+          id: `${Date.now()}`,
           name: s.name || `Task ${idx + 1}`,
           action: s.action || 'click',
           selector: (s.target && s.target.selector) || s.selector || '',
@@ -294,11 +276,11 @@
             React.createElement('button', { type: 'button', className: 'text-slate-400 hover:text-slate-100 text-2xl leading-none p-0 w-6 h-6 flex items-center justify-center', onClick: () => setShowSaveModal(false) }, '×')
           ),
           React.createElement('div', { className: 'p-5' },
-            React.createElement('input', { type: 'text', className: 'w-full bg-slate-700 border border-slate-600 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:bg-slate-600 focus:border-blue-500', placeholder: 'Script name', value: saveName, onChange: e => setSaveName(e.target.value), onKeyDown: e => e.key === 'Enter' && confirmSave() })
+            React.createElement('input', { type: 'text', className: 'w-full bg-slate-700 border border-slate-600 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:bg-slate-600 focus:border-blue-500', placeholder: 'Script name', value: saveName, onChange: e => setSaveName(e.target.value), onKeyDown: e => e.key === 'Enter' && saveScript(saveName) })
           ),
           React.createElement('div', { className: 'flex items-center justify-end gap-3 p-5 border-t border-slate-700' },
             React.createElement('button', { type: 'button', className: 'bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-600', onClick: () => setShowSaveModal(false) }, 'Cancel'),
-            React.createElement('button', { type: 'button', className: 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50', onClick: confirmSave, disabled: saving }, saving ? 'Saving...' : 'Save')
+            React.createElement('button', { type: 'button', className: 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50', onClick: () => saveScript(saveName), disabled: saving }, saving ? 'Saving...' : 'Save')
           )
         )
       ),
