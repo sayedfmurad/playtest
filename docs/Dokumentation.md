@@ -1,3 +1,67 @@
+//To remember for the exam
+Das Projekt orientierte sich an der klassischen Phasenstruktur des Wasserfallmodells, wurde jedoch iterativ umgesetzt, um flexible Anpassungen während der Entwicklung zu ermöglichen.
+
+
+"يتم تحميل مكونات React مباشرة من خلال الـ UMD-Builds، لذلك لا تكون هناك حاجة لأدوات بناء إضافية مثل Webpack أو Vite."
+
+الآن نشرح كلمة UMD Build 👇
+
+🔹 معنى UMD (Universal Module Definition)
+
+
+///Todo 
+""Zur Versionsverwaltung wurde GitHub genutzt, während die Diagramme mit diagrams.net erstellt wurden.""
+check what app you will use then wright here
+„Anhang A.1: Detaillierte Zeitplanung”.
+
+
+anhang Aktivitätsdiagramm - Geschäftslogik
+anhang Pflichtenheft
+anhang 5.1 Implementierung der Datenstrukturen
+anhang 5.2 Implementierung der Geschäftslogik
+anhang 5.3 Implementierung der Schnittstellen
+anhang 5.4 Verwendete Bibliotheken
+
+Anhang A7: JSON-Datenstruktur """
+{
+  "name": "checkout_flow",
+  "steps": [
+    {
+      "action": "goto",
+      "value": "https://shop.example.com",
+      "options": { "waitUntil": "load", "timeout": 30000 }
+    },
+    {
+      "action": "fill",
+      "target": { "selector": "#email" },
+      "value": "user@example.com",
+      "enabled": true
+    },
+    {
+      "action": "press",
+      "target": { "selector": "#email" },
+      "value": "Enter"
+    },
+    {
+      "action": "click",
+      "target": { "selector": ".buy-button" },
+      "retries": 1,
+      "retryDelayMs": 200
+    },
+    {
+      "action": "expectUrlMatches",
+      "value": "checkout"
+    },
+    {
+      "action": "expectTextContains",
+      "target": { "selector": "h1" },
+      "value": "Checkout"
+    }
+  ]
+}
+
+"""
+
 ## Inhaltsverzeichnis
 
 1. Einleitung

@@ -43,40 +43,37 @@ if (!window.extensionWS) {
     return res;
   }
 
-  async function runSteps(steps) {
+  async function runStep(step) {
     const results = [];
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      try {
-        const lastRes = await execOne(step);
-        results.push({ index: i, step, response: lastRes, uiId: step.uiId });
-        // Standardized message format: always include status and error
-        const status = lastRes?.status === 'ok' ? 'ok' : 'error';
-        const errorMsg = lastRes?.status !== 'ok' ? 
-          (lastRes?.error?.message || lastRes?.error || String(lastRes?.error || 'Unknown error')) : '';
-        try { 
-          chrome.runtime.sendMessage({ 
-            type: 'step_result', 
-            index: i, 
-            status,
-            error: errorMsg,
-            uiId: step.uiId 
-          }); 
-        } catch {}
-      } catch (err) {
-        results.push({ index: i, step, error: err, uiId: step.uiId });
-        // Standardized message format: always include status and error
-        const errorMsg = err?.message || String(err || 'Unknown error');
-        try { 
-          chrome.runtime.sendMessage({ 
-            type: 'step_result', 
-            index: i, 
-            status: 'error',
-            error: errorMsg,
-            uiId: step.uiId 
-          }); 
-        } catch {}
-      }
+    try {
+      const lastRes = await execOne(step);
+      results.push({ index: 0, step, response: lastRes, uiId: step.uiId });
+      // Standardized message format: always include status and error
+      const status = lastRes?.status === 'ok' ? 'ok' : 'error';
+      const errorMsg = lastRes?.status !== 'ok' ? 
+        (lastRes?.error?.message || lastRes?.error || String(lastRes?.error || 'Unknown error')) : '';
+      try { 
+        chrome.runtime.sendMessage({ 
+          type: 'step_result', 
+          index: 0, 
+          status,
+          error: errorMsg,
+          uiId: step.uiId 
+        }); 
+      } catch {}
+    } catch (err) {
+      results.push({ index: 0, step, error: err, uiId: step.uiId });
+      // Standardized message format: always include status and error
+      const errorMsg = err?.message || String(err || 'Unknown error');
+      try { 
+        chrome.runtime.sendMessage({ 
+          type: 'step_result', 
+          index: 0, 
+          status: 'error',
+          error: errorMsg,
+          uiId: step.uiId 
+        }); 
+      } catch {}
     }
     return { results };
   }
@@ -91,8 +88,11 @@ if (!window.extensionWS) {
       return true;
     }
 
-    if (msg.type === 'run_steps' && Array.isArray(msg.steps)) {
-      runSteps(msg.steps).then(r => sendResponse(r)).catch(e => sendResponse({ ok: false, error: String(e) }));
+    if (msg.type === 'run_steps' && (msg.step || Array.isArray(msg.steps))) {
+      // Accept single-step messages (preferred). If an array is provided, run the first step for backward compatibility.
+      const step = msg.step || (Array.isArray(msg.steps) ? msg.steps[0] : null);
+      if (!step) { sendResponse({ ok: false, error: 'No step provided' }); return true; }
+      runStep(step).then(r => sendResponse(r)).catch(e => sendResponse({ ok: false, error: String(e) }));
       return true;
     }
 

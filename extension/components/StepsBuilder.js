@@ -106,7 +106,7 @@
       if (opts) one.options = opts;
       if ((step.storeAs || '').trim()) one.storeAs = step.storeAs.trim();
 
-      const res = await sendToTab({ type: 'run_steps', steps: [one] });
+      const res = await sendToTab({ type: 'run_steps', step: one });
       const first = res && res.results && res.results[0];
       const ok = !!(first && first.response && first.response.status === 'ok');
       if (ok) {
