@@ -10,57 +10,9 @@ Das Projekt orientierte sich an der klassischen Phasenstruktur des Wasserfallmod
 
 
 ///Todo 
-""Zur Versionsverwaltung wurde GitHub genutzt, während die Diagramme mit diagrams.net erstellt wurden.""
-check what app you will use then wright here
-„Anhang A.1: Detaillierte Zeitplanung”.
+sort page numbers 
+check if you can link the attachments
 
-
-anhang Aktivitätsdiagramm - Geschäftslogik
-anhang Pflichtenheft
-anhang 5.1 Implementierung der Datenstrukturen
-anhang 5.2 Implementierung der Geschäftslogik
-anhang 5.3 Implementierung der Schnittstellen
-anhang 5.4 Verwendete Bibliotheken
-
-Anhang A7: JSON-Datenstruktur """
-{
-  "name": "checkout_flow",
-  "steps": [
-    {
-      "action": "goto",
-      "value": "https://shop.example.com",
-      "options": { "waitUntil": "load", "timeout": 30000 }
-    },
-    {
-      "action": "fill",
-      "target": { "selector": "#email" },
-      "value": "user@example.com",
-      "enabled": true
-    },
-    {
-      "action": "press",
-      "target": { "selector": "#email" },
-      "value": "Enter"
-    },
-    {
-      "action": "click",
-      "target": { "selector": ".buy-button" },
-      "retries": 1,
-      "retryDelayMs": 200
-    },
-    {
-      "action": "expectUrlMatches",
-      "value": "checkout"
-    },
-    {
-      "action": "expectTextContains",
-      "target": { "selector": "h1" },
-      "value": "Checkout"
-    }
-  ]
-}
-
-"""
 
 ## Inhaltsverzeichnis
 
@@ -280,5 +232,52 @@ python backend/start_server.py
 4) Tests erstellen/ausführen
 - Toolbar‑Icon klicken → Fenster öffnet sich → Schritte hinzufügen → „Run“ bzw. „Run all“
 - Speichern unter Namen, später über „Load“ erneut laden
+ 
+ 
+---
+ 
+## Anhang A.13: Quellcodeauszug API- und WebSocket-Routen
+ 
+**Listing A.13 – Auszug der REST- und WebSocket-Schnittstellen**
+ 
+Die folgenden Auszüge zeigen exemplarisch die Definition der REST‑Routen zur Skriptverwaltung sowie den WebSocket‑Endpoint zur Ausführung. Es handelt sich um gekürzte Beispiele; die vollständige Implementierung befindet sich in den genannten Modulen.
+ 
+### REST API – Beispiel (`backend/api/scripts.py`)
+ 
+```python
+router = APIRouter()
 
+@router.get("/scripts")
+async def list_scripts():
+    items = []
+    for p in SCRIPTS_DIR.glob("*.json"):
+        items.append({"name": p.stem})
+    return {"items": items}
 
+@router.get("/scripts/{name}")
+async def get_script(name: str):
+    safe = _sanitize_name(name)
+    fp = SCRIPTS_DIR / f"{safe}.json"
+    if not fp.exists():
+        raise HTTPException(status_code=404, detail="Not found")
+    return json.loads(fp.read_text("utf-8"))
+```
+ 
+### WebSocket – Beispiel (`backend/main.py`, `backend/api/websocket.py`)
+ 
+```python
+# backend/main.py
+@app.websocket("/ws")
+async def ws_endpoint(ws: WebSocket):
+    await websocket.handle_websocket(ws, manager)
+
+# backend/api/websocket.py
+async def handle_websocket(websocket: WebSocket, manager: ConnectionManager):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            asyncio.create_task(process_message(data, manager, websocket))
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+```
